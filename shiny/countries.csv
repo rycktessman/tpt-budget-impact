@@ -1,0 +1,65 @@
+country,code,region,code_num
+Bangladesh,BGD,SEARO,513
+Brazil,BRA,AMRO,223
+Burundi,BDI,AFRO,618
+Cambodia,KHM,WPRO,522
+Democratic Republic of the Congo,COD,AFRO,636
+Eswatini,SWZ,AFRO,734
+Ethiopia,ETH,AFRO,644
+Ghana,GHA,AFRO,652
+Haiti,HTI,AMRO,263
+India,IND,SEARO,534
+Indonesia,IDN,SEARO,536
+Kenya,KEN,AFRO,664
+Kiribati,KIR,WPRO,826
+Lesotho,LSO,AFRO,666
+Liberia,LBR,AFRO,668
+Malawi,MWI,AFRO,676
+Mongolia,MNG,WPRO,948
+Mozambique,MOZ,AFRO,688
+Namibia,NAM,AFRO,728
+Pakistan,PAK,SEARO,564
+Rwanda,RWA,AFRO,714
+Somalia,SOM,AFRO,726
+South Africa,ZAF,AFRO,199
+Tajikistan,TJK,EURO,923
+Tanzania,TZA,AFRO,738
+Thailand,THA,SEARO,578
+Timor-Leste,TLS,SEARO,537
+Turkey,TUR,EURO,186
+Uganda,UGA,AFRO,746
+Venezuela,VEN,AMRO,299
+Zambia,ZMB,AFRO,754
+Zimbabwe,ZWE,AFRO,698
+Angola,AGO,AFRO,614
+Azerbaijan,AZE,EURO,912
+Belarus,BLR,EURO,913
+Bhutan,BTN,SEARO,514
+Botswana,BWA,AFRO,616
+Burkina Faso,BFA,AFRO,748
+Central African Republic,CAF,AFRO,626
+Chile,CHL,AMRO,228
+Colombia,COL,AMRO,233
+Cote d'Ivoire,CIV,AFRO,662
+Cuba,CUB,AMRO,NA
+Dominican Republic,DOM,AMRO,243
+Gabon,GAB,AFRO,646
+Georgia,GEO,EURO,915
+Jamaica,JAM,AMRO,343
+Kazakhstan,KAZ,EURO,916
+Maldives,MDV,SEARO,556
+Mali,MLI,AFRO,678
+Marshall Islands,MHL,WPRO,867
+Mauritania,MRT,AFRO,682
+Micronesia,FSM,WPRO,868
+Myanmar,MMR,SEARO,518
+Nigeria,NGA,AFRO,694
+Niue Islands,NIU,WPRO,NA
+Philippines,PHL,WPRO,566
+Sierra Leone,SLE,AFRO,724
+Taiwan,TWN,WPRO,528
+Turkmenistan,TKM,EURO,925
+Uruguay,URY,AMRO,298
+Uzbekistan,UZB,EURO,927
+Vietnam,VNM,WPRO,582
+Yemen,YEM,AFRO,474
