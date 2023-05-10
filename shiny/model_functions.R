@@ -1130,28 +1130,3 @@ run_model_plhiv <- function(country_name, regimen, covg, options, params) {
   plhiv_comb <- plhiv_comb %>% select(-c(backlog, cum_disc_costs))
   return(plhiv_comb)
 }
-
-
-library(tidyverse)
-library(data.table)
-country_name <- "Nigeria"
-regimen <- "3HP"
-covg <- 0.5
-
-params <- c(plhiv_params, unlist(cost_params[[country_code]]), 
-            "p_ltbi"=ltbi_params %>% filter(iso3==country_code) %>% pull(ltbi_prev), 
-            "p_child_die"=p_child_die[[country_code]], 
-            "p_adol_die"=p_adol_die[[country_code]], 
-            "p_adult_die"=p_adult_die[[country_code]], 
-            "p_notif_child"=p_notif_child[[country_code]], 
-            "p_notif_adol"=p_notif_adol[[country_code]], 
-            "p_notif_1524"=p_notif_1524[[country_code]], 
-            "p_notif_adult"=p_notif_adult[[country_code]],
-            "p_success_child"=p_success_child[[country_code]],
-            "p_success_adol"=p_success_child[[country_code]],
-            "p_success_adult"=p_success_adult[[country_code]], 
-            "p_success_plhiv"=p_success_plhiv[[country_code]], 
-            "life_exp_child"=life_exp_child[[country_code]], 
-            "life_exp_adol"=life_exp_adol[[country_code]], 
-            "life_exp_adult"=life_exp_adult[[country_code]])
-

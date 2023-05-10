@@ -4,39 +4,10 @@ library(plotly)
 library(tidyverse)
 library(data.table)
 
-load("shiny/params.Rda")
-load_url <- function (url, ..., sha1 = NULL) {
-  # based very closely on code for devtools::source_url
-  stopifnot(is.character(url), length(url) == 1)
-  temp_file <- tempfile()
-  on.exit(unlink(temp_file))
-  request <- httr::GET(url)
-  httr::stop_for_status(request)
-  writeBin(httr::content(request, type = "raw"), temp_file)
-  file_sha1 <- digest::digest(file = temp_file, algo = "sha1")
-  if (is.null(sha1)) {
-    message("SHA-1 hash of file is ", file_sha1)
-  }
-  else {
-    if (nchar(sha1) < 6) {
-      stop("Supplied SHA-1 hash is too short (must be at least 6 characters)")
-    }
-    file_sha1 <- substr(file_sha1, 1, nchar(sha1))
-    if (!identical(file_sha1, sha1)) {
-      stop("SHA-1 hash of downloaded file (", file_sha1, 
-           ")\n  does not match expected value (", sha1, 
-           ")", call. = FALSE)
-    }
-  }
-  load(temp_file, envir = .GlobalEnv)
-}
-file_url <- getURL("http://github.com/rycktessman/tpt-cost-effectiveness/raw/main/shiny/params.Rda")
-load(file_url)
-file_url <- ("https://github.com/rycktessman/tpt-cost-effectiveness/raw/main/shiny/params.rda")
-load(url(file_url))
-load("shiny/country_params.Rda")
-load("shiny/pub_targets.Rda")
-source("shiny/model_functions.R")
+load(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/params.Rda"))
+load(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/country_params.Rda"))
+load(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/pub_targets.Rda"))
+source(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/model_functions.R"))
 
 regimens <- c("None", "3HP", "1HP", "6H")
 countries <- c("Namibia", "Zambia")
