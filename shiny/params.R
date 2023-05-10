@@ -6,6 +6,8 @@ p_hh_child_tb_symptom <- 1 #100% of active TB among children is symptomatic (ie 
 p_hh_child_asymptom_tb <- p_hh_child_tb*(1-p_hh_child_tb_symptom)/(1-p_hh_child_symptom) #% of asymptomatic children that have active TB
 hh_child_cxr_sens <- 0.87 #CXR among child contacts is 87% sensitive
 hh_child_cxr_spec <- 0.99 #CXR among child contacts is 99% specific
+hh_child_xpert_sens <- 0.805 #Xpert among children (w/ pos symptom screen) is 80.5% sensitive
+hh_child_xpert_spec <- 0.98 #Xpert among children (w/ pos symptom screen) is 98.2% specific
 p_hh_child_cxr_tpt <- (p_hh_child_symptom - p_hh_child_tb*p_hh_child_tb_symptom)*hh_child_cxr_spec +
   (1 - p_hh_child_symptom)*(1-p_hh_child_asymptom_tb) + 
   p_hh_child_tb*(1-p_hh_child_tb_symptom*hh_child_cxr_sens) #% children eligible for TPT w/ CXR diagnosis
