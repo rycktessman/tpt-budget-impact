@@ -706,7 +706,234 @@ model_tb_plhiv <- function(d, d_ltbi, d_covg, d_ltbi_covg, params) {
   return(data_all)
 }
 
-#calculate costs
+#used to calculate outcomes of contact investigation (not used for PLHIV)
+calc_contact_invest <- function(data, params) {
+  data <- data %>% 
+    mutate(contact_invest_screen = contact_invest_num*params$p_screen,
+           contact_invest_tb = contact_invest_num*params$p_tb,
+           contact_invest_tb_tp = contact_invest_tb*params$p_tb_screen*params$sens,
+           contact_invest_tb_tn = (contact_invest_screen-contact_invest_tb*params$p_tb_screen)*
+             params$spec + 
+             (contact_invest_num - contact_invest_screen)*(1-params$p_negscreen_tb),
+           contact_invest_tb_fn = contact_invest_tb*(1-params$p_tb_screen) +
+             contact_invest_tb*params$p_tb_screen*(1-params$sens),
+           contact_invest_tb_fp = contact_invest_num - 
+             (contact_invest_tb_tp + contact_invest_tb_tn + contact_invest_tb_fn),
+           initiate_ipt = (contact_invest_tb_fn + contact_invest_tb_tn)*
+             p_initiate*prop_ipt,
+           initiate_3hp = (contact_invest_tb_fn + contact_invest_tb_tn)*
+             p_initiate*prop_3hp,
+           initiate_1hp = (contact_invest_tb_fn + contact_invest_tb_tn)*
+             p_initiate*prop_1hp,
+           initiate_ipt_ltbi = contact_invest_tb_tn*prop_ipt*p_initiate*params$p_ltbi/(1-params$p_tb),
+           initiate_3hp_ltbi = contact_invest_tb_tn*prop_3hp*p_initiate*params$p_ltbi/(1-params$p_tb),
+           initiate_1hp_ltbi = contact_invest_tb_tn*prop_1hp*p_initiate*params$p_ltbi/(1-params$p_tb),
+           #in scenarios w/ no CXR screening, need to add an additional initiation visit for subclinical that start TPT
+           #in scenarios w/ CXR screening, the CXR visit is the initiation visit
+           initiate_ipt_negscreen = ((contact_invest_num - contact_invest_screen)*(1-params$p_negscreen_tb) + #TNs w/neg screen
+                                       contact_invest_tb*(1-params$p_tb_screen))* #FNs (all TB cases w/neg screen)
+             p_initiate*prop_ipt, #multiply by initiation and % that get IPT.
+           initiate_3hp_negscreen = ((contact_invest_num - contact_invest_screen)*(1-params$p_negscreen_tb) + #TNs w/neg screen
+                                       contact_invest_tb*(1-params$p_tb_screen))* #FNs (all TB cases w/neg screen)
+             p_initiate*prop_3hp, #multiply by initiation and % that get 3HP.
+           initiate_1hp_negscreen = ((contact_invest_num - contact_invest_screen)*(1-params$p_negscreen_tb) + #TNs w/neg screen
+                                       contact_invest_tb*(1-params$p_tb_screen))* #FNs (all TB cases w/neg screen)
+             p_initiate*prop_1hp, #multiply by initiation and % that get 1HP.                    
+           #also calculate those w/ active and latent TB that weren't investigated
+           no_contact_tb = (total - contact_invest_num)*params$p_tb,
+           no_contact_ltbi = (total - contact_invest_num)*params$p_ltbi,
+           no_contact_no_tb = total - (contact_invest_num + no_contact_tb + no_contact_ltbi))
+}
+
+#calculate results of TPT (completion, impact on LTBI, toxicity) for household contacts
+calc_tpt_outcomes_contacts <- function(data, params) {
+  data <- data %>% 
+    mutate(tox_nohosp_ipt=initiate_ipt*params$p_tox_nohosp_ipt,
+           tox_nohosp_3hp=initiate_3hp*params$p_tox_nohosp_3hp,
+           tox_nohosp_1hp=initiate_1hp*params$p_tox_nohosp_1hp,
+           tox_hosp_ipt=initiate_ipt*params$p_tox_hosp_ipt,
+           tox_hosp_3hp=initiate_3hp*params$p_tox_hosp_3hp,
+           tox_hosp_1hp=initiate_1hp*params$p_tox_hosp_1hp,
+           complete_ipt=initiate_ipt*params$p_complete_ipt*(1-(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt)),
+           complete_3hp=initiate_3hp*params$p_complete_3hp*(1-(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp)),
+           complete_1hp=initiate_1hp*params$p_complete_1hp*(1-(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp)),
+           part_complete_ipt=initiate_ipt - (complete_ipt + tox_nohosp_ipt + tox_hosp_ipt),
+           part_complete_3hp=initiate_3hp - (complete_3hp + tox_nohosp_3hp + tox_hosp_3hp),
+           part_complete_1hp=initiate_1hp - (complete_1hp + tox_nohosp_1hp + tox_hosp_1hp)) 
+  data <- data %>%
+    mutate(ltbi = no_contact_ltbi +  #LTBI and no investigation
+             contact_invest_tb_tn*(1-p_initiate)*params$p_ltbi/(1-params$p_tb) + #LTBI and didn't initiate
+             initiate_ipt_ltbi + #LTBI and IPT initiated 
+             initiate_3hp_ltbi +
+             initiate_1hp_ltbi -
+             initiate_ipt_ltbi*params$p_complete_ipt*params$eff_ipt - #subtract out full IPT completion/efficacy
+             initiate_3hp_ltbi*params$p_complete_3hp*params$eff_3hp - #subtract out full 3HP completion/efficacy
+             initiate_1hp_ltbi*params$p_complete_1hp*params$eff_1hp - #subtract out full 1HP completion/efficacy
+             initiate_ipt_ltbi*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-
+                                  params$p_tox_nohosp_ipt)*params$eff_ipt/2 - #subtract out IPT partial completion/efficacy
+             initiate_3hp_ltbi*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-
+                                  params$p_tox_nohosp_3hp)*params$eff_3hp/2 - #subtract out 3HP partial completion/efficacy
+             initiate_1hp_ltbi*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-
+                                  params$p_tox_nohosp_1hp)*params$eff_1hp/2, #subtract out 1HP partial completion/efficacy
+           active_tb = (no_contact_tb + contact_invest_tb_fn)*(1-p_notif)*(1-params$p_die_tb) + #not notified
+             (no_contact_tb + contact_invest_tb_fn)*p_notif*(1-params$p_die_tb_tx)*(1-p_success) + #notified but not tx success
+             contact_invest_tb_tp*(1-params$p_die_tb_tx)*(1-p_success), #notified but not tx success
+           no_tb = no_contact_no_tb + #no TB but not investigated
+             contact_invest_tb_tn*(1-params$p_ltbi/(1-params$p_tb)) + #investigated but didn't have TB (regardless of TPT status)
+             contact_invest_tb_fp + #no TB and incorrectly treated (false positives)
+             initiate_ipt_ltbi*params$p_complete_ipt*params$eff_ipt + #full IPT completion
+             initiate_3hp_ltbi*params$p_complete_3hp*params$eff_3hp + #full 3HP completion
+             initiate_1hp_ltbi*params$p_complete_1hp*params$eff_1hp + #full 1HP completion
+             initiate_ipt_ltbi*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-params$p_tox_nohosp_ipt)*
+             params$eff_ipt/2 + #partial IPT completion
+             initiate_3hp_ltbi*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-params$p_tox_nohosp_3hp)*
+             params$eff_3hp/2 + #partial 3HP completion
+             initiate_1hp_ltbi*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-params$p_tox_nohosp_1hp)*
+             params$eff_1hp/2 + #partial 1HP completion
+             contact_invest_tb_tp*(1-params$p_die_tb_tx)*p_success + #notified and cured
+             (no_contact_tb + contact_invest_tb_fn)*p_notif*(1-params$p_die_tb_tx)*p_success, #notified and cured
+           notif_tb = contact_invest_tb_tp + #ppl treated correctly from contact investigation - only used for costs
+             (no_contact_tb + contact_invest_tb_fn)*p_notif + #ppl notified by background detections
+             contact_invest_tb_fp, #ppl treated incorrectly from contact investigation 
+           cases = no_contact_tb + contact_invest_tb_fn + contact_invest_tb_tp, #both treated and untreated cases
+           #now model deaths
+           tb_deaths = (no_contact_tb + contact_invest_tb_fn)*p_notif*params$p_die_tb_tx +
+             (no_contact_tb + contact_invest_tb_fn)*(1-p_notif)*params$p_die_tb +
+             contact_invest_tb_tp*params$p_die_tb_tx,
+           non_tb_deaths = (active_tb + no_tb + ltbi)*p_die,
+           #adjust other states for non-TB deaths
+           active_tb=active_tb*(1-p_die),
+           no_tb = no_tb*(1-p_die),
+           ltbi=ltbi*(1-p_die)
+    )
+}
+
+#after year of TPT provision, models TB outcomes (& non-TB deaths) over time
+model_tb_contacts <- function(d, p_notif, p_success, p_reactivate, p_die_tb, p_die_tb_tx, 
+                              p_die, p_infect, ltbi_protect, prop_fast) {
+  #order: progressions, infections, fast progressions, notifications, TB deaths, tx success/failure, non-TB deaths
+  #need to keep notifications before TB mortality so that tx can reduce risk of death
+  
+  #TB deaths
+  tb_deaths <- d$active_tb*(1-p_notif)*p_die_tb + 
+    d$active_tb*p_notif*p_die_tb_tx +
+    d$ltbi*p_reactivate*(1-p_notif)*p_die_tb +
+    d$ltbi*p_reactivate*p_notif*p_die_tb_tx
+  cum_tb_deaths <- tb_deaths + d$cum_tb_deaths
+  
+  #transitions within alive states
+  #non-notified cases (that don't die of TB)
+  active_tb <- d$active_tb*(1-p_notif)*(1-p_die_tb) +
+    d$ltbi*p_reactivate*(1-p_notif)*(1-p_die_tb) +
+    d$ltbi*(1-p_reactivate)*p_infect*(1-ltbi_protect)*prop_fast*(1-p_notif)*(1-p_die_tb) + 
+    d$no_tb*p_infect*prop_fast*(1-p_notif)*(1-p_die_tb) +
+    #notified cases that fail tx (that don't die of TB)
+    d$active_tb*p_notif*(1-p_die_tb_tx)*(1-p_success) +
+    d$ltbi*p_reactivate*p_notif*(1-p_die_tb_tx)*(1-p_success) +
+    d$ltbi*(1-p_reactivate)*p_infect*(1-ltbi_protect)*prop_fast*p_notif*(1-p_die_tb_tx)*(1-p_success) +
+    d$no_tb*p_infect*prop_fast*p_notif*(1-p_die_tb_tx)*(1-p_success)
+  ltbi <- d$ltbi*(1-p_reactivate) +
+    d$no_tb*p_infect*(1-prop_fast) -
+    d$ltbi*(1-p_reactivate)*p_infect*(1-ltbi_protect)*prop_fast
+  no_tb <- d$active_tb*p_notif*(1-p_die_tb_tx)*p_success +
+    d$ltbi*p_reactivate*p_notif*(1-p_die_tb_tx)*p_success +
+    d$ltbi*(1-p_reactivate)*p_infect*(1-ltbi_protect)*prop_fast*p_notif*(1-p_die_tb_tx)*p_success +
+    d$no_tb*p_infect*prop_fast*p_notif*(1-p_die_tb_tx)*p_success +
+    d$no_tb*(1-p_infect)
+  
+  #track new cases and new notifications
+  cases <- d$ltbi*(1-p_die)*p_reactivate +
+    d$ltbi*(1-p_die)*(1-p_reactivate)*p_infect*(1-ltbi_protect)*prop_fast +
+    d$no_tb*(1-p_die)*p_infect*prop_fast
+  notif_tb <- d$active_tb*p_notif +
+    d$ltbi*p_reactivate*p_notif +
+    d$ltbi*(1-p_reactivate)*p_infect*(1-ltbi_protect)*prop_fast*p_notif +
+    d$no_tb*p_infect*prop_fast*p_notif
+  
+  #non-tb deaths
+  non_tb_deaths <- active_tb*p_die + ltbi*p_die + no_tb*p_die 
+  active_tb <- active_tb*(1-p_die)
+  no_tb <- no_tb*(1-p_die)
+  ltbi <- ltbi*(1-p_die)
+  cum_non_tb_deaths <- non_tb_deaths + d$cum_non_tb_deaths
+  
+  #add to data, replacing outcomes from previous timestep
+  d <- d %>% select(-c(tb_deaths, non_tb_deaths, cum_tb_deaths, cum_non_tb_deaths,
+                       active_tb, notif_tb, ltbi, no_tb, cases))
+  new_data <- data.frame(tb_deaths, non_tb_deaths, cum_tb_deaths, cum_non_tb_deaths,
+                         active_tb, notif_tb, ltbi, no_tb, cases)
+  data <- bind_cols(d, new_data)
+  return(data)
+}
+
+#combine everything that happens in a given year from model_tb output that is stratified by yr and yrs_out - used for contacts only
+combine_yrs <- function(data, pop_type, policy_end_yr, end_yr) {
+  data <- data %>% mutate(year=year+yrs_out)
+  data_early <- data %>% filter(year<=policy_end_yr) %>% group_by(country, code, year, scenario) %>%
+    summarise(contact_invest_num=unique(contact_invest_num[yrs_out==0]),
+              contact_invest_screen=unique(contact_invest_screen[yrs_out==0]),
+              contact_invest_tb_tp=unique(contact_invest_tb_tp[yrs_out==0]),
+              contact_invest_tb_fp=unique(contact_invest_tb_fp[yrs_out==0]),
+              contact_invest_tb_tn=unique(contact_invest_tb_tn[yrs_out==0]),
+              contact_invest_tb_fn=unique(contact_invest_tb_fn[yrs_out==0]),
+              initiate_ipt_negscreen=unique(initiate_ipt_negscreen[yrs_out==0]),
+              initiate_3hp_negscreen=unique(initiate_3hp_negscreen[yrs_out==0]),
+              initiate_1hp_negscreen=unique(initiate_1hp_negscreen[yrs_out==0]),
+              complete_ipt=unique(complete_ipt[yrs_out==0]),
+              part_complete_ipt=unique(part_complete_ipt[yrs_out==0]),
+              tox_nohosp_ipt=unique(tox_nohosp_ipt[yrs_out==0]),
+              tox_hosp_ipt=unique(tox_hosp_ipt[yrs_out==0]),
+              complete_3hp=unique(complete_3hp[yrs_out==0]),
+              part_complete_3hp=unique(part_complete_3hp[yrs_out==0]),
+              tox_nohosp_3hp=unique(tox_nohosp_3hp[yrs_out==0]),
+              tox_hosp_3hp=unique(tox_hosp_3hp[yrs_out==0]),
+              complete_1hp=unique(complete_1hp[yrs_out==0]),
+              part_complete_1hp=unique(part_complete_1hp[yrs_out==0]),
+              tox_nohosp_1hp=unique(tox_nohosp_1hp[yrs_out==0]),
+              tox_hosp_1hp=unique(tox_hosp_1hp[yrs_out==0]),
+              total=sum(total), 
+              ltbi=sum(ltbi), active_tb=sum(active_tb), no_tb=sum(no_tb), 
+              notif_tb=sum(notif_tb), cases=sum(cases), tb_deaths=sum(tb_deaths), 
+              non_tb_deaths=sum(non_tb_deaths), cum_tb_deaths=sum(cum_tb_deaths), 
+              cum_non_tb_deaths=sum(cum_non_tb_deaths)) %>%
+    filter(year<=(end_yr)) 
+  if(end_yr > policy_end_yr) {
+    data_late <- data %>% filter(year>policy_end_yr) %>% group_by(country, code, year, scenario) %>%
+      summarise(contact_invest_num=0,
+                contact_invest_screen=0,
+                contact_invest_tb_tp=0,
+                contact_invest_tb_fp=0,
+                contact_invest_tb_tn=0,
+                contact_invest_tb_fn=0,
+                initiate_ipt_negscreen=0,
+                initiate_3hp_negscreen=0,
+                initiate_1hp_negscreen=0,
+                complete_ipt=0,
+                part_complete_ipt=0,
+                tox_nohosp_ipt=0,
+                tox_hosp_ipt=0,
+                complete_3hp=0,
+                part_complete_3hp=0,
+                tox_nohosp_3hp=0,
+                tox_hosp_3hp=0,
+                complete_1hp=0,
+                part_complete_1hp=0,
+                tox_nohosp_1hp=0,
+                tox_hosp_1hp=0,
+                total=sum(total), ltbi=sum(ltbi), active_tb=sum(active_tb), 
+                no_tb=sum(no_tb), notif_tb=sum(notif_tb), cases=sum(cases), 
+                tb_deaths=sum(tb_deaths), 
+                non_tb_deaths=sum(non_tb_deaths), cum_tb_deaths=sum(cum_tb_deaths), 
+                cum_non_tb_deaths=sum(cum_non_tb_deaths)) %>%
+      filter(year<=(end_yr)) #after policy horizon
+    data <- bind_rows(data_early, data_late)
+  } else {
+    data <- data_early
+  }
+  return(data)
+}
+
+#calculate costs - used for PLHIV and contacts
 calc_costs <- function(data, pop_type, costs, cost_impl_input, 
                        params, disc_fac, start_yr) { #costs=country varying, params=child_params, adol_params, etc.
   if(pop_type %in% c("child", "adol", "adult")) {
@@ -880,7 +1107,7 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
   return(data)
 }
 
-#wrapper function to run the whole model
+#wrapper function to run the whole model for PLHIV
 run_model_plhiv <- function(country_name, regimen, covg, options, params) {
   policy_horizon <- 5 #for now, implement over 5 years and calculate costs/outcomes over 5 years
   analytic_horizon <- 5
@@ -905,8 +1132,7 @@ run_model_plhiv <- function(country_name, regimen, covg, options, params) {
   params$wastage <- ifelse(tpt_wastage=="full courses", 0, as.double(tpt_wastage))
   params$part_course_cost <- ifelse(tpt_wastage=="full courses", 1, 0.5)
   
-  #load parameters 
-  #total numbers of PLHIV to cover by year
+  #load total numbers of PLHIV to cover by year
   pop_calcs <- pop_calcs %>% dplyr::select(code, country, year, plhiv_art_new_lag, backlog_none) %>%
     filter(country==country_name &
              year>=start_yr & year<=policy_end_yr) %>%
@@ -1141,6 +1367,332 @@ run_model_plhiv <- function(country_name, regimen, covg, options, params) {
   return(plhiv_comb)
 }
 
+#wrapper function to run the whole model for contacts
+run_model_contacts <- function(country_name, regimen_child, regimen_adol, regimen_adult,
+                               covg_child, covg_adol, covg_adult, options,
+                               child_params, adol_params, adult_params) {
+  policy_horizon <- 5 #for now, implement over 5 years and calculate costs/outcomes over 5 years
+  analytic_horizon <- 5
+  start_yr <- 2024
+  end_yr <- start_yr + analytic_horizon - 1
+  policy_end_yr <- start_yr + policy_horizon - 1
+  
+  #options to be added later
+  contact_only <- 0 #base case = include TPT too (0); sensitivity analysis = only contact investigation (1); or TPT Vs. CI (2)
+  reinfect <- 0 #0=base case, or annual risk of infection
+  visits_3hp <- 1 #1 or 3 visits (1 in main analysis). initiation visit is separate (part of screening)
+  cxr_screen_5plus <- 1 #whether to include CXR in the screening algorithm for contacts aged 5+ (w/ symptom screen, vs. symptom screen alone)
+  tb_test_child <- "cxr" #cxr or xpert as a test for children < 5
+  tpt_wastage <- "full courses"  #wastage factor for drugs (e.g. 0.1), or cost out "full courses" for all initiators
+  
+  #implementation of options
+  child_params$cxr_screen <- 0 #only option built in currently - CXR is only used as a test, not screening tool, for children
+  adol_params$cxr_screen <- cxr_screen_5plus #built into sensitivity/specificity of screening - so only affects costs
+  adult_params$cxr_screen <- cxr_screen_5plus
+  child_params$tb_test <- tb_test_child
+  adol_params$tb_test <- "xpert" #only option built in currently
+  adult_params$tb_test <- "xpert" #only option built in currently
+  if(reinfect!=0) {
+    child_params$p_infect <- reinfect
+    adol_params$p_infect <- reinfect
+    adult_params$p_infect <- reinfect
+  }
+  child_params$n_visit_3hp <- visits_3hp
+  adol_params$n_visit_3hp <- visits_3hp
+  adult_params$n_visit_3hp <- visits_3hp
+  
+  #calculate additional screening and testing probabilities based on options
+  child_params$p_screen <- child_params$p_symptom
+  child_params$p_tb_screen <- child_params$p_tb_symptom
+  child_params$p_negscreen_tb <- child_params$p_asymptom_tb
+  child_params$sens <- child_params$cxr_sens*(tb_test_child=="cxr") + child_params$xpert_sens*(tb_test_child=="xpert")
+  child_params$spec <- child_params$cxr_spec*(tb_test_child=="cxr") + child_params$xpert_spec*(tb_test_child=="xpert")
+  adol_params$p_screen <- adol_params$p_symptom_cxr*(cxr_screen_5plus==1) + adol_params$p_symptom*(cxr_screen_5plus==0)
+  adol_params$p_tb_screen <- adol_params$p_tb_symptom_cxr*(cxr_screen_5plus==1) + adol_params$p_tb_symptom*(cxr_screen_5plus==0)
+  adol_params$p_negscreen_tb <- adol_params$p_asymptom_negcxr_tb*(cxr_screen_5plus==1) + 
+    adol_params$p_asymptom_tb*(cxr_screen_5plus==0)
+  adol_params$sens <- adol_params$xpert_sens
+  adol_params$spec <- adol_params$xpert_spec
+  adult_params$p_screen <- adult_params$p_symptom_cxr*(cxr_screen_5plus==1) + adult_params$p_symptom*(cxr_screen_5plus==0)
+  adult_params$p_tb_screen <- adult_params$p_tb_symptom_cxr*(cxr_screen_5plus==1) + adult_params$p_tb_symptom*(cxr_screen_5plus==0)
+  adult_params$p_negscreen_tb <- adult_params$p_asymptom_negcxr_tb*(cxr_screen_5plus==1) + 
+    adult_params$p_asymptom_tb*(cxr_screen_5plus==0)
+  adult_params$sens <- adult_params$xpert_sens
+  adult_params$spec <- adult_params$xpert_spec
+  p_hh_child_tpt <- 0*(child_params$cxr_screen==1)*(child_params$tb_test=="xpert") +
+    other_params$p_hh_child_xpert_tpt*(child_params$cxr_screen==0)*(child_params$tb_test=="xpert") +
+    other_params$p_hh_child_cxr_tpt*(child_params$cxr_screen==0)*(child_params$tb_test=="cxr")
+  p_hh_adol_tpt <- other_params$p_hh_adol_symptom_cxr_tpt*(adol_params$cxr_screen==1)*(adol_params$tb_test=="xpert") +
+    other_params$p_hh_adol_symptom_tpt*(adol_params$cxr_screen==0)*(adol_params$tb_test=="xpert") +
+    0*(adol_params$cxr_screen==0)*(adol_params$tb_test=="cxr")
+  p_hh_adult_tpt <- other_params$p_hh_adult_symptom_cxr_tpt*(adult_params$cxr_screen==1)*(adult_params$tb_test=="xpert") +
+    other_params$p_hh_adult_symptom_tpt*(adult_params$cxr_screen==0)*(adult_params$tb_test=="xpert") +
+    0*(adult_params$cxr_screen==0)*(adult_params$tb_test=="cxr")
+  
+  child_params$wastage <- ifelse(tpt_wastage=="full courses", 0, 
+                                 as.double(tpt_wastage))
+  child_params$part_course_cost <- ifelse(tpt_wastage=="full courses",
+                                          1, 0.5)
+  adol_params$wastage <- child_params$wastage
+  adol_params$part_course_cost <- child_params$part_course_cost
+  adult_params$wastage <- child_params$wastage
+  adult_params$part_course_cost <- child_params$part_course_cost
+  
+  #load total numbers of contacts to cover by year
+  pop_calcs <- pivot_longer(pop_calcs %>% select(-start_yr) %>%
+                              filter(country==country_name &
+                                       year>=start_yr & year<=policy_end_yr), 
+                            cols=c(ends_with("tpt"), 
+                                   ends_with("none")),
+                            names_to=c(".value", "scenario"),
+                            names_sep="_(?=[^_]+$)") #this is regex for "last underscore only"
+  pop_calcs <- pop_calcs %>% 
+    mutate(child_ipt=if_else(regimen_child=="6H" & scenario=="tpt", covg_child/100, 0),
+           adol_ipt=if_else(regimen_adol=="6H" & scenario=="tpt", covg_adol/100, 0),
+           adult_ipt=if_else(regimen_adult=="6H" & scenario=="tpt", covg_adult/100, 0),
+           child_3hp=if_else(regimen_child=="3HP" & scenario=="tpt", covg_child/100, 0),
+           adol_3hp=if_else(regimen_adol=="3HP" & scenario=="tpt", covg_adol/100, 0),
+           adult_3hp=if_else(regimen_adult=="3HP" & scenario=="tpt", covg_adult/100, 0),
+           child_1hp=if_else(regimen_child=="1HP" & scenario=="tpt", covg_child/100, 0),
+           adol_1hp=if_else(regimen_adol=="1HP" & scenario=="tpt", covg_adol/100, 0),
+           adult_1hp=if_else(regimen_adult=="1HP" & scenario=="tpt", covg_adult/100, 0))
+  
+  #separate into 3 dataframes - one for each target population group
+  #hh contacts - targets include initiation, so backcalculate # contacts investigated
+  
+  #CHILD CONTACTS
+  child <- pop_calcs %>% select(-pop) %>% 
+    rename("initiate_ipt_covg"="child_ipt", 
+           "initiate_3hp_covg"="child_3hp",
+           "initiate_1hp_covg"="child_1hp",
+           "pop"="pop04", "hh"="hh_child") %>%
+    mutate(total=tb_notif_new*hh,
+           hh_contact_covg = initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg, #initiate_covg is now before adjusting for screening/testing negative and initiation ratios
+           prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
+                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
+                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           prop_1hp=if_else(initiate_1hp_covg==0|contact_only==1, 0, 
+                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           contact_invest_num = hh_contact_covg*total,
+           initiate_num=contact_invest_num*p_hh_child_tpt*child_params$p_initiate,
+           p_initiate=if_else(contact_only==1, 0, child_params$p_initiate)) %>%
+    select(country, code, year, scenario,
+           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, contact_invest_num, initiate_num, p_initiate)
+  child <- child %>% mutate(p_notif=child_params$p_notif,
+                            p_success=child_params$p_success,
+                            p_die=child_params$p_die)
+  #run model for child contacts
+  child <- calc_contact_invest(child, child_params) #outcomes of contact investigation
+  child <- calc_tpt_outcomes_contacts(child, child_params) #TPT-related events and outcomes
+  #calculate out horizon years
+  child_all <- child %>% mutate(yrs_out=0, 
+                                cum_tb_deaths=tb_deaths,
+                                cum_non_tb_deaths=non_tb_deaths)
+  for(i in 1:analytic_horizon) {
+    #children: mortality and reactivation rates vary over time, notification and mortality varies by country
+    child_prev <- child_all %>% filter(yrs_out==i-1)
+    if(i <=2) {
+      child_cur <- model_tb_contacts(child_prev, child_params$p_notif, child_params$p_success, 
+                                     child_params$p_reactivate_02, child_params$p_die_tb, 
+                                     child_params$p_die_tb_tx, child_params$p_die,
+                                     child_params$p_infect, child_params$ltbi_protect,
+                                     child_params$prop_fast)
+    } else if(i==3) {
+      child_cur <- model_tb_contacts(child_prev, child_params$p_notif, child_params$p_success, 
+                                     child_params$p_reactivate_25, child_params$p_die_tb, 
+                                     child_params$p_die_tb_tx, child_params$p_die,
+                                     child_params$p_infect, child_params$ltbi_protect,
+                                     child_params$prop_fast)
+    } else if(i==4|i==5) {
+      child_cur <- model_tb_contacts(child_prev, mean(c(child_params$p_notif, adol_params$p_notif)),
+                                     child_params$p_success, 
+                                     child_params$p_reactivate_25, 
+                                     mean(c(child_params$p_die_tb, adol_params$p_die_tb)),
+                                     mean(c(child_params$p_die_tb_tx, adol_params$p_die_tb_tx)),
+                                     mean(c(child_params$p_die, adol_params$p_die)),
+                                     child_params$p_infect, child_params$ltbi_protect,
+                                     child_params$prop_fast)
+    } else if(i>5 & i<=10) {
+      child_cur <- model_tb_contacts(child_prev, adol_params$p_notif, adol_params$p_success,  
+                                     child_params$p_reactivate_510, adol_params$p_die_tb, 
+                                     adol_params$p_die_tb_tx, adol_params$p_die,
+                                     child_params$p_infect, child_params$ltbi_protect,
+                                     child_params$prop_fast)
+    } else if(i>10) {
+      child_cur <- model_tb_contacts(child_prev, adol_params$p_notif_1524, adult_params$p_success, 
+                                     child_params$p_reactivate_10plus, 
+                                     mean(c(adol_params$p_die_tb, adult_params$p_die_tb)),
+                                     mean(c(adol_params$p_die_tb_tx, adult_params$p_die_tb_tx)), 
+                                     mean(c(adol_params$p_die, adult_params$p_die)),
+                                     child_params$p_infect, child_params$ltbi_protect,
+                                     child_params$prop_fast)
+    }
+    child_cur <- bind_rows(child_cur)
+    child_cur <- child_cur %>% mutate(yrs_out=i)
+    child_all <- bind_rows(child_all, child_cur)
+  }
+  child_comb <- combine_yrs(child_all, "child", policy_end_yr, end_yr) #combine across years
+  
+  #CONTACTS AGED 5-14
+  adol <- pop_calcs %>% select(-pop) %>% 
+    rename("initiate_ipt_covg"="adol_ipt", 
+           "initiate_3hp_covg"="adol_3hp",
+           "initiate_1hp_covg"="adol_1hp",
+           "pop"="pop514", "hh"="hh_adol") %>%
+    mutate(total=tb_notif_new*hh,
+           hh_contact_covg = initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg, #initiate_covg is now before adjusting for screening/testing negative and initiation ratios
+           prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
+                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
+                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           prop_1hp=if_else(initiate_1hp_covg==0|contact_only==1, 0, 
+                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           contact_invest_num = hh_contact_covg*total,
+           initiate_num=contact_invest_num*p_hh_adol_tpt*adol_params$p_initiate,
+           p_initiate=if_else(contact_only==1, 0, adol_params$p_initiate)) %>%
+    select(country, code, year, scenario,
+           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, contact_invest_num, initiate_num, p_initiate)
+  adol <- adol %>% mutate(p_notif=adol_params$p_notif,
+                          p_success=adol_params$p_success,
+                          p_die=adol_params$p_die)
+  #run model for adol contacts
+  adol <- calc_contact_invest(adol, adol_params) #outcomes of contact investigation
+  adol <- calc_tpt_outcomes_contacts(adol, adol_params) #TPT-related events and outcomes
+  #calculate out horizon years
+  adol_all <- adol %>% mutate(yrs_out=0, 
+                              cum_tb_deaths=tb_deaths,
+                              cum_non_tb_deaths=non_tb_deaths)
+  for(i in 1:analytic_horizon) {
+    #mortality and reactivation rates vary over time, notification and mortality varies by country
+    adol_prev <- adol_all %>% filter(yrs_out==i-1)
+    if(i <=2) {
+      adol_cur <- model_tb_contacts(adol_prev, adol_params$p_notif, adol_params$p_success, 
+                                    adol_params$p_reactivate_02, adol_params$p_die_tb, 
+                                    adol_params$p_die_tb_tx, adol_params$p_die,
+                                    adol_params$p_infect, adol_params$ltbi_protect,
+                                    adol_params$prop_fast)
+    } 
+    else if(i>2 & i<=5) {
+      adol_cur <- model_tb_contacts(adol_prev, adol_params$p_notif, adol_params$p_success, 
+                                    adol_params$p_reactivate_25, adol_params$p_die_tb, 
+                                    adol_params$p_die_tb_tx, adol_params$p_die,
+                                    adol_params$p_infect, adol_params$ltbi_protect,
+                                    adol_params$prop_fast)
+    } else if(i>5 & i<=10) {
+      adol_cur <- model_tb_contacts(adol_prev, mean(c(adol_params$p_notif, adol_params$p_notif_1524)),
+                                    mean(c(adol_params$p_success, adult_params$p_success)), 
+                                    adol_params$p_reactivate_510, 
+                                    mean(c(adol_params$p_die_tb, adult_params$p_die_tb)),
+                                    mean(c(adol_params$p_die_tb_tx, adult_params$p_die_tb_tx)), 
+                                    mean(c(adol_params$p_die, adult_params$p_die)),
+                                    adol_params$p_infect, adol_params$ltbi_protect,
+                                    adol_params$prop_fast)
+    } else if(i>10) {
+      adol_cur <- model_tb_contacts(adol_prev, c(adol_params$p_notif_1524, adult_params$p_notif),
+                                    adult_params$p_success, 
+                                    adol_params$p_reactivate_10plus, 
+                                    mean(c(adol_params$p_die_tb, adult_params$p_die_tb)),
+                                    mean(c(adol_params$p_die_tb_tx, adult_params$p_die_tb_tx)), 
+                                    mean(c(adol_params$p_die, adult_params$p_die)),
+                                    adol_params$p_infect, adol_params$ltbi_protect,
+                                    adol_params$prop_fast)
+    }
+    adol_cur <- bind_rows(adol_cur)
+    adol_cur <- adol_cur %>% mutate(yrs_out=i)
+    adol_all <- bind_rows(adol_all, adol_cur)
+  }
+  adol_comb <- combine_yrs(adol_all, "adol", policy_end_yr, end_yr) #combine across years
+  
+  #ADULT CONTACTS
+  adult <- pop_calcs %>% select(-pop) %>% 
+    rename("initiate_ipt_covg"="adult_ipt", 
+           "initiate_3hp_covg"="adult_3hp",
+           "initiate_1hp_covg"="adult_1hp",
+           "pop"="popadult", "hh"="hh_adult") %>%
+    mutate(total=tb_notif_new*hh,
+           hh_contact_covg = initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg, #initiate_covg is now before adjusting for screening/testing negative and initiation ratios
+           prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
+                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
+                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           prop_1hp=if_else(initiate_1hp_covg==0|contact_only==1, 0, 
+                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
+           contact_invest_num = hh_contact_covg*total,
+           initiate_num=contact_invest_num*p_hh_adult_tpt*adult_params$p_initiate,
+           p_initiate=if_else(contact_only==1, 0, adult_params$p_initiate)) %>%
+    select(country, code, year, scenario,
+           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, contact_invest_num, initiate_num, p_initiate)
+  adult <- adult %>% mutate(p_notif=adult_params$p_notif,
+                            p_success=adult_params$p_success,
+                            p_die=adult_params$p_die)
+  #run model for adult contacts
+  adult <- calc_contact_invest(adult, adult_params) #outcomes of contact investigation
+  adult <- calc_tpt_outcomes_contacts(adult, adult_params) #TPT-related events and outcomes
+  #calculate out horizon years
+  adult_all <- adult %>% mutate(yrs_out=0, 
+                                cum_tb_deaths=tb_deaths,
+                                cum_non_tb_deaths=non_tb_deaths)
+  for(i in 1:analytic_horizon) {
+    #mortality and reactivation rates vary over time, notification and mortality varies by country
+    adult_prev <- adult_all %>% filter(yrs_out==i-1)
+    if(i <=2) {
+      adult_cur <- model_tb_contacts(adult_prev, adult_params$p_notif, adult_params$p_success,
+                                     adult_params$p_reactivate_02, adult_params$p_die_tb, 
+                                     adult_params$p_die_tb_tx, adult_params$p_die,
+                                     adult_params$p_infect, adult_params$ltbi_protect,
+                                     adult_params$prop_fast)
+    } else if(i>2 & i<=5) {
+      adult_cur <- model_tb_contacts(adult_prev, adult_params$p_notif, adult_params$p_success,
+                                     adult_params$p_reactivate_25, adult_params$p_die_tb, 
+                                     adult_params$p_die_tb_tx, adult_params$p_die,
+                                     adult_params$p_infect, adult_params$ltbi_protect,
+                                     adult_params$prop_fast)
+    } else if(i>5 & i<=10) {
+      adult_cur <- model_tb_contacts(adult_prev, adult_params$p_notif, adult_params$p_success,
+                                     adult_params$p_reactivate_510, adult_params$p_die_tb, 
+                                     adult_params$p_die_tb_tx, adult_params$p_die,
+                                     adult_params$p_infect, adult_params$ltbi_protect,
+                                     adult_params$prop_fast)
+    } else if(i>10) {
+      adult_cur <- model_tb_contacts(adult_prev, adult_params$p_notif, adult_params$p_success,
+                                     adult_params$p_reactivate_10plus, adult_params$p_die_tb, 
+                                     adult_params$p_die_tb_tx, adult_params$p_die,
+                                     adult_params$p_infect, adult_params$ltbi_protect,
+                                     adult_params$prop_fast)
+    }
+    adult_cur <- bind_rows(adult_cur)
+    adult_cur <- adult_cur %>% mutate(yrs_out=i)
+    adult_all <- bind_rows(adult_all, adult_cur)
+  }
+  adult_comb <- combine_yrs(adult_all, "adult", policy_end_yr, end_yr) #combine across years
+  
+  #calculate DALYs and discounted DALYs
+  if(FALSE) {
+    child_comb <-  calc_dalys(as.data.table(child_comb), "child", life_exp_child, other_params$dw_tb, 
+                              other_params$dw_notb, 1, other_params$dur_tb_tx, other_params$disc_fac,
+                              start_yr)
+    adol_comb <-  calc_dalys(as.data.table(adol_comb), "adol", life_exp_adol, other_params$dw_tb, 
+                             other_params$dw_notb, 1, other_params$dur_tb_tx, other_params$disc_fac,
+                             start_yr)
+    adult_comb <-  calc_dalys(as.data.table(adult_comb), "adult", life_exp_adult, other_params$dw_tb, 
+                              other_params$dw_notb, 1, other_params$dur_tb_tx, other_params$disc_fac,
+                              start_yr)
+  }
+  
+  
+  #calculate costs
+  child_comb <- calc_costs(child_comb, "child", child_params, 
+                           0, child_params, child_params$disc_fac, start_yr)
+  adol_comb <- calc_costs(adol_comb, "adol", adol_params, 
+                          0, adol_params, adol_params$disc_fac, start_yr)
+  adult_comb <- calc_costs(adult_comb, "adult", adult_params, 
+                           0, adult_params, adult_params$disc_fac, start_yr)
+  
+  return(c(child_comb, adol_comb, adult_comb))
+}
+
+
 regimens <- c("None", "3HP", "1HP", "6H")
 countries <- c("Nigeria", "Zambia")
 
@@ -1236,15 +1788,35 @@ server <- function(input, output) {
   rv <- reactiveValues()
   observe({
     country_code <- country_info %>% filter(country==input$country) %>% pull(code)
-    params <- c(plhiv_params, other_params, unlist(cost_params[[country_code]]), 
+    #run model fo PLHIV
+    plhiv_params <- c(plhiv_params, other_params, unlist(cost_params[[country_code]]), 
                 "p_ltbi"=ltbi_params %>% filter(iso3==country_code) %>% pull(ltbi_prev), 
                 "p_notif_ltfu"=p_notif_adult[[country_code]],
                 "p_success"=p_success_plhiv[[country_code]],
                 "yrs_new"=2, "yrs"=10)
-    rv$output <- run_model_plhiv(input$country, input$tpt_plhiv, input$covg_plhiv, NULL, params)
+    rv$plhiv_output <- run_model_plhiv(input$country, input$tpt_plhiv, input$covg_plhiv, NULL, plhiv_params)
+    child_params <- c(child_params, other_params, unlist(cost_params[[country_code]]), 
+                      "p_die"=p_child_die[[country_code]], 
+                      "p_notif"=p_notif_child[[country_code]], 
+                      "p_success"=p_success_child[[country_code]],
+                      "life_exp"=life_exp_child[[country_code]], 
+                      "yrs_new"=2, "yrs"=10)
+    adol_params <- c(adol_params, other_params, unlist(cost_params[[country_code]]), 
+                      "p_die"=p_adol_die[[country_code]], 
+                      "p_notif"=p_notif_adol[[country_code]], 
+                      "p_notif_1524"=p_notif_1524[[country_code]], 
+                      "p_success"=p_success_child[[country_code]],
+                      "life_exp"=life_exp_adol[[country_code]], 
+                      "yrs_new"=2, "yrs"=10)
+    adult_params <- c(adult_params, other_params, unlist(cost_params[[country_code]]), 
+                      "p_die"=p_adult_die[[country_code]], 
+                      "p_notif"=p_notif_adult[[country_code]],
+                      "p_success"=p_success_adult[[country_code]], 
+                      "life_exp"=life_exp_adult[[country_code]],
+                      "yrs_new"=2, "yrs"=10)
   })
   output$plhiv_costs_sum <- renderPlotly({
-    plot_ly(rv$output,
+    plot_ly(rv$plhiv_output,
             x=~year,
             y=~round(costs-cost_art),
             type='bar',
@@ -1255,7 +1827,7 @@ server <- function(input, output) {
              legend=list(x=1, y=0.5))
   })
   output$plhiv_costs_tpt_detail <- renderPlotly({
-    plot_ly(rv$output %>% filter(scenario=="Specified TPT Scenario"),
+    plot_ly(rv$plhiv_output %>% filter(scenario=="Specified TPT Scenario"),
             x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
             type='bar', name="TPT Costs") %>% 
       add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%
@@ -1267,7 +1839,7 @@ server <- function(input, output) {
              barmode="stack")
   })
   output$plhiv_costs_comp_detail <- renderPlotly({
-    plot_ly(rv$output %>% filter(scenario=="Comparator Scenario (no TPT)"),
+    plot_ly(rv$plhiv_output %>% filter(scenario=="Comparator Scenario (no TPT)"),
             x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
             type='bar', name="TPT Costs") %>% 
       add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%
@@ -1279,7 +1851,7 @@ server <- function(input, output) {
              barmode="stack")
   })
   output$plhiv_costs_tpt_detail_art <- renderPlotly({
-    plot_ly(rv$output %>% filter(scenario=="Specified TPT Scenario"),
+    plot_ly(rv$plhiv_output %>% filter(scenario=="Specified TPT Scenario"),
             x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
             type='bar', name="TPT Costs") %>% 
       add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%
@@ -1292,7 +1864,7 @@ server <- function(input, output) {
              barmode="stack")
   })
   output$plhiv_costs_comp_detail_art <- renderPlotly({
-    plot_ly(rv$output %>% filter(scenario=="Comparator Scenario (no TPT)"),
+    plot_ly(rv$plhiv_output %>% filter(scenario=="Comparator Scenario (no TPT)"),
             x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
             type='bar', name="TPT Costs") %>% 
       add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%

@@ -11,6 +11,9 @@ hh_child_xpert_spec <- 0.98 #Xpert among children (w/ pos symptom screen) is 98.
 p_hh_child_cxr_tpt <- (p_hh_child_symptom - p_hh_child_tb*p_hh_child_tb_symptom)*hh_child_cxr_spec +
   (1 - p_hh_child_symptom)*(1-p_hh_child_asymptom_tb) + 
   p_hh_child_tb*(1-p_hh_child_tb_symptom*hh_child_cxr_sens) #% children eligible for TPT w/ CXR diagnosis
+p_hh_child_xpert_tpt <- (p_hh_child_symptom - p_hh_child_tb*p_hh_child_tb_symptom)*hh_child_xpert_spec +
+  (1 - p_hh_child_symptom)*(1-p_hh_child_asymptom_tb) + 
+  p_hh_child_tb*(1-p_hh_child_tb_symptom*hh_child_xpert_sens) #% children eligible for TPT w/ Xpert diagnosis
 
 #contact investigation-related params - adolescents
 p_hh_adol_ltbi <- p_hh_child_ltbi #% of adol contacts w/ LTBI
@@ -237,6 +240,8 @@ child_params <- list("p_symptom_cxr"=NA, #no CXR screening for children < 5
                      "p_tb_symptom"=p_hh_child_tb_symptom,
                      "cxr_sens"=hh_child_cxr_sens,
                      "cxr_spec"=hh_child_cxr_spec,
+                     "xpert_sens"=hh_child_xpert_sens,
+                     "xpert_spec"=hh_child_xpert_spec,
                      "p_asymptom_negcxr_tb"=NA, #no CXR screening for children < 5
                      "p_asymptom_tb"=p_hh_child_asymptom_tb,
                      "p_initiate"=p_hh_child_initiate,
@@ -416,6 +421,7 @@ other_params <- list("disc_fac"=disc_fac,
                       "dw_tb"=dw_tb,
                       "dur_tb_tx"=dur_tb_tx,
                      "p_hh_child_cxr_tpt"=p_hh_child_cxr_tpt,
+                     "p_hh_child_xpert_tpt"=p_hh_child_xpert_tpt,
                      "p_hh_adol_symptom_cxr_tpt"=p_hh_adol_symptom_cxr_tpt,
                      "p_hh_adol_symptom_tpt"=p_hh_adol_symptom_tpt,
                      "p_hh_adult_symptom_cxr_tpt"=p_hh_adult_symptom_cxr_tpt,
