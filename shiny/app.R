@@ -3,6 +3,7 @@ library(bslib)
 library(plotly)
 library(tidyverse)
 library(data.table)
+options(dplyr.summarise.inform = FALSE)
 
 load(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/params.Rda"))
 load(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/country_params.Rda"))
@@ -1486,12 +1487,13 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   child <- calc_contact_invest(child, child_params) #outcomes of contact investigation
   child <- calc_tpt_outcomes_contacts(child, child_params) #TPT-related events and outcomes
   #calculate out horizon years
-  child_all <- child %>% mutate(yrs_out=0, 
-                                cum_tb_deaths=tb_deaths,
-                                cum_non_tb_deaths=non_tb_deaths)
+  child_all <- list()
+  child_all[[1]] <- child %>% mutate(yrs_out=0, 
+                                     cum_tb_deaths=tb_deaths,
+                                     cum_non_tb_deaths=non_tb_deaths)
   for(i in 1:analytic_horizon) {
     #children: mortality and reactivation rates vary over time, notification and mortality varies by country
-    child_prev <- child_all %>% filter(yrs_out==i-1)
+    child_prev <- child_all[[i]]
     if(i <=2) {
       child_cur <- model_tb_contacts(child_prev, child_params$p_notif, child_params$p_success, 
                                      child_params$p_reactivate_02, child_params$p_die_tb, 
@@ -1528,10 +1530,10 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
                                      child_params$p_infect, child_params$ltbi_protect,
                                      child_params$prop_fast)
     }
-    child_cur <- bind_rows(child_cur)
     child_cur <- child_cur %>% mutate(yrs_out=i)
-    child_all <- bind_rows(child_all, child_cur)
+    child_all[[i+1]] <- child_cur
   }
+  child_all <- rbindlist(child_all, use.names=T)
   child_comb <- combine_yrs(child_all, "child", policy_end_yr, end_yr) #combine across years
   
   #CONTACTS AGED 5-14
@@ -1560,12 +1562,13 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   adol <- calc_contact_invest(adol, adol_params) #outcomes of contact investigation
   adol <- calc_tpt_outcomes_contacts(adol, adol_params) #TPT-related events and outcomes
   #calculate out horizon years
-  adol_all <- adol %>% mutate(yrs_out=0, 
-                              cum_tb_deaths=tb_deaths,
-                              cum_non_tb_deaths=non_tb_deaths)
+  adol_all <- list()
+  adol_all[[1]] <- adol %>% mutate(yrs_out=0, 
+                                     cum_tb_deaths=tb_deaths,
+                                     cum_non_tb_deaths=non_tb_deaths)
   for(i in 1:analytic_horizon) {
     #mortality and reactivation rates vary over time, notification and mortality varies by country
-    adol_prev <- adol_all %>% filter(yrs_out==i-1)
+    adol_prev <- adol_all[[i]]
     if(i <=2) {
       adol_cur <- model_tb_contacts(adol_prev, adol_params$p_notif, adol_params$p_success, 
                                     adol_params$p_reactivate_02, adol_params$p_die_tb, 
@@ -1598,10 +1601,10 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
                                     adol_params$p_infect, adol_params$ltbi_protect,
                                     adol_params$prop_fast)
     }
-    adol_cur <- bind_rows(adol_cur)
     adol_cur <- adol_cur %>% mutate(yrs_out=i)
-    adol_all <- bind_rows(adol_all, adol_cur)
+    adol_all[[i+1]] <- adol_cur
   }
+  adol_all <- rbindlist(adol_all, use.names=T)
   adol_comb <- combine_yrs(adol_all, "adol", policy_end_yr, end_yr) #combine across years
   
   #ADULT CONTACTS
@@ -1630,12 +1633,13 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   adult <- calc_contact_invest(adult, adult_params) #outcomes of contact investigation
   adult <- calc_tpt_outcomes_contacts(adult, adult_params) #TPT-related events and outcomes
   #calculate out horizon years
-  adult_all <- adult %>% mutate(yrs_out=0, 
-                                cum_tb_deaths=tb_deaths,
-                                cum_non_tb_deaths=non_tb_deaths)
+  adult_all <- list()
+  adult_all[[1]] <- adult %>% mutate(yrs_out=0, 
+                                   cum_tb_deaths=tb_deaths,
+                                   cum_non_tb_deaths=non_tb_deaths)
   for(i in 1:analytic_horizon) {
     #mortality and reactivation rates vary over time, notification and mortality varies by country
-    adult_prev <- adult_all %>% filter(yrs_out==i-1)
+    adult_prev <- adult_all[[i]]
     if(i <=2) {
       adult_cur <- model_tb_contacts(adult_prev, adult_params$p_notif, adult_params$p_success,
                                      adult_params$p_reactivate_02, adult_params$p_die_tb, 
@@ -1661,10 +1665,10 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
                                      adult_params$p_infect, adult_params$ltbi_protect,
                                      adult_params$prop_fast)
     }
-    adult_cur <- bind_rows(adult_cur)
     adult_cur <- adult_cur %>% mutate(yrs_out=i)
-    adult_all <- bind_rows(adult_all, adult_cur)
+    adult_all[[i+1]] <- adult_cur
   }
+  adult_all <- rbindlist(adult_all, use.names=T)
   adult_comb <- combine_yrs(adult_all, "adult", policy_end_yr, end_yr) #combine across years
   
   #calculate DALYs and discounted DALYs
@@ -1689,11 +1693,13 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   adult_comb <- calc_costs(adult_comb, "adult", adult_params, 
                            0, adult_params, adult_params$disc_fac, start_yr)
   
-  return(c(child_comb, adol_comb, adult_comb))
+  out <- list("child"=child_comb, "adol"=adol_comb, "adult"=adult_comb)
+  return(out)
 }
 
 
-regimens <- c("None", "3HP", "1HP", "6H")
+
+regimens <- c("3HP", "1HP", "6H", "None")
 countries <- c("Nigeria", "Zambia")
 
 #Pt 1: User Interface (UI) - framework (structure for app's appearance)
@@ -1719,7 +1725,7 @@ ui <- navbarPage(
         shiny::numericInput(
           inputId="covg_plhiv",
           label="Select TPT coverage level for PLHIV (0-100%)",
-          value=0
+          value=50
         ),
         shiny::selectInput(
           inputId="tpt_child",
@@ -1729,7 +1735,7 @@ ui <- navbarPage(
         shiny::numericInput(
           inputId="covg_child",
           label="Select TPT coverage level for contacts < 5 (0-100%)",
-          value=0
+          value=50
         ),
         shiny::selectInput(
           inputId="tpt_adol",
@@ -1739,7 +1745,7 @@ ui <- navbarPage(
         shiny::numericInput(
           inputId="covg_adol",
           label="Select TPT coverage level for contacts 5-14 (0-100%)",
-          value=0
+          value=50
         ),
         shiny::selectInput(
           inputId="tpt_adult",
@@ -1749,13 +1755,15 @@ ui <- navbarPage(
         shiny::numericInput(
           inputId="covg_adult",
           label="Select TPT coverage level for contacts 15+ (0-100%)",
-          value=0
+          value=50
         )
       ),
       mainPanel(
         h1("Results"),
-        fluidRow(column(12, plotlyOutput("plhiv_costs_sum"))),
-        fluidRow()
+        fluidRow(column(6, plotlyOutput("plhiv_costs_sum")),
+                 column(6, plotlyOutput("child_costs_sum"))),
+        fluidRow(column(6, plotlyOutput("adol_costs_sum")),
+                 column(6, plotlyOutput("adult_costs_sum")))
       )
     )
   ),
@@ -1814,6 +1822,13 @@ server <- function(input, output) {
                       "p_success"=p_success_adult[[country_code]], 
                       "life_exp"=life_exp_adult[[country_code]],
                       "yrs_new"=2, "yrs"=10)
+    contacts_output <- run_model_contacts(input$country, input$tpt_child, input$tpt_adol, input$tpt_adult,
+                                          input$covg_child, input$covg_adol, input$covg_adult, NULL,
+                                          child_params, adol_params, adult_params)
+    rv$child_output <- contacts_output$child
+    rv$adol_output <- contacts_output$adol
+    rv$adult_output <- contacts_output$adult
+    
   })
   output$plhiv_costs_sum <- renderPlotly({
     plot_ly(rv$plhiv_output,
@@ -1822,6 +1837,39 @@ server <- function(input, output) {
             type='bar',
             split=~scenario) %>%
       layout(title="Total TB-Related Costs, PLHIV",
+             yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             legend=list(x=1, y=0.5))
+  })
+  output$child_costs_sum <- renderPlotly({
+    plot_ly(rv$child_output,
+            x=~year,
+            y=~round(costs),
+            type='bar',
+            split=~scenario) %>%
+      layout(title="Total Costs, Contacts < 5 years",
+             yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             legend=list(x=1, y=0.5))
+  })
+  output$adol_costs_sum <- renderPlotly({
+    plot_ly(rv$adol_output,
+            x=~year,
+            y=~round(costs),
+            type='bar',
+            split=~scenario) %>%
+      layout(title="Total Costs, Contacts 5-14 years",
+             yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             legend=list(x=1, y=0.5))
+  })
+  output$adult_costs_sum <- renderPlotly({
+    plot_ly(rv$adult_output,
+            x=~year,
+            y=~round(costs),
+            type='bar',
+            split=~scenario) %>%
+      layout(title="Total Costs, Contacts 15+ years",
              yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              legend=list(x=1, y=0.5))
