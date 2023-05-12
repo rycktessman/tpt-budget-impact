@@ -3,6 +3,8 @@ library(bslib)
 library(plotly)
 library(tidyverse)
 library(data.table)
+library(shinyvalidate)
+library(RColorBrewer)
 options(dplyr.summarise.inform = FALSE)
 
 load(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/params.Rda"))
@@ -1109,7 +1111,7 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
 }
 
 #wrapper function to run the whole model for PLHIV
-run_model_plhiv <- function(country_name, regimen, covg, options, params) {
+run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, params, pop_calcs) {
   policy_horizon <- 5 #for now, implement over 5 years and calculate costs/outcomes over 5 years
   analytic_horizon <- 5
   start_yr <- 2024
@@ -1135,13 +1137,12 @@ run_model_plhiv <- function(country_name, regimen, covg, options, params) {
   
   #load total numbers of PLHIV to cover by year
   pop_calcs <- pop_calcs %>% dplyr::select(code, country, year, plhiv_art_new_lag, backlog_none) %>%
-    filter(country==country_name &
-             year>=start_yr & year<=policy_end_yr) %>%
+    filter(year>=start_yr & year<=policy_end_yr) %>%
     rename("plhiv_new"="plhiv_art_new_lag",
            "backlog"="backlog_none") %>%
     mutate(backlog=if_else(year==min(year), backlog, as.numeric(NA)))
   pop_calcs_none <- pop_calcs %>%
-    mutate(scenario="Comparator Scenario (no TPT)",
+    mutate(scenario=scenarios[[2]],
            initiate_ipt_covg_new=0,
            initiate_ipt_covg_prev=0,
            initiate_3hp_covg_new=0,
@@ -1149,13 +1150,13 @@ run_model_plhiv <- function(country_name, regimen, covg, options, params) {
            initiate_1hp_covg_new=0,
            initiate_1hp_covg_prev=0)
   pop_calcs_tpt <- pop_calcs %>% 
-    mutate(scenario="Specified TPT Scenario",
-           initiate_ipt_covg_new=if_else(regimen=="6H", covg/100*params$p_initiate, 0),
-           initiate_ipt_covg_prev=if_else(regimen=="6H", covg/100*params$p_initiate, 0),
-           initiate_3hp_covg_new=if_else(regimen=="3HP", covg/100*params$p_initiate, 0),
-           initiate_3hp_covg_prev=if_else(regimen=="3HP", covg/100*params$p_initiate, 0),
-           initiate_1hp_covg_new=if_else(regimen=="1HP", covg/100*params$p_initiate, 0),
-           initiate_1hp_covg_prev=if_else(regimen=="1HP", covg/100*params$p_initiate, 0))
+    mutate(scenario=scenarios[[1]],
+           initiate_ipt_covg_new=(covg/100)*(regimen=="6H"),
+           initiate_ipt_covg_prev=(covg/100)*(regimen=="6H"),
+           initiate_3hp_covg_new=(covg/100)*(regimen=="3HP"),
+           initiate_3hp_covg_prev=(covg/100)*(regimen=="3HP"),
+           initiate_1hp_covg_new=(covg/100)*(regimen=="1HP"),
+           initiate_1hp_covg_prev=(covg/100)*(regimen=="1HP"))
   pop <- bind_rows(pop_calcs_none, pop_calcs_tpt)
   
   #set up model
@@ -1370,8 +1371,8 @@ run_model_plhiv <- function(country_name, regimen, covg, options, params) {
 
 #wrapper function to run the whole model for contacts
 run_model_contacts <- function(country_name, regimen_child, regimen_adol, regimen_adult,
-                               covg_child, covg_adol, covg_adult, options,
-                               child_params, adol_params, adult_params) {
+                               covg_child, covg_adol, covg_adult, scenarios, options,
+                               child_params, adol_params, adult_params, pop_calcs) {
   policy_horizon <- 5 #for now, implement over 5 years and calculate costs/outcomes over 5 years
   analytic_horizon <- 5
   start_yr <- 2024
@@ -1440,25 +1441,25 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   adult_params$part_course_cost <- child_params$part_course_cost
   
   #load total numbers of contacts to cover by year
-  pop_calcs <- pivot_longer(pop_calcs %>% select(-start_yr) %>%
-                              filter(country==country_name &
-                                       year>=start_yr & year<=policy_end_yr), 
+  pop_calcs <- pivot_longer(pop_calcs %>% dplyr::select(-start_yr) %>%
+                              filter(year>=start_yr & year<=policy_end_yr), 
                             cols=c(ends_with("tpt"), 
                                    ends_with("none")),
                             names_to=c(".value", "scenario"),
                             names_sep="_(?=[^_]+$)") #this is regex for "last underscore only"
   pop_calcs <- pop_calcs %>% 
-    mutate(child_ipt=if_else(regimen_child=="6H" & scenario=="tpt", covg_child/100, 0),
-           adol_ipt=if_else(regimen_adol=="6H" & scenario=="tpt", covg_adol/100, 0),
-           adult_ipt=if_else(regimen_adult=="6H" & scenario=="tpt", covg_adult/100, 0),
-           child_3hp=if_else(regimen_child=="3HP" & scenario=="tpt", covg_child/100, 0),
-           adol_3hp=if_else(regimen_adol=="3HP" & scenario=="tpt", covg_adol/100, 0),
-           adult_3hp=if_else(regimen_adult=="3HP" & scenario=="tpt", covg_adult/100, 0),
-           child_1hp=if_else(regimen_child=="1HP" & scenario=="tpt", covg_child/100, 0),
-           adol_1hp=if_else(regimen_adol=="1HP" & scenario=="tpt", covg_adol/100, 0),
-           adult_1hp=if_else(regimen_adult=="1HP" & scenario=="tpt", covg_adult/100, 0))
-  
-  #separate into 3 dataframes - one for each target population group
+    mutate(child_ipt=(regimen_child=="6H")*(scenario=="tpt")*covg_child/100,
+           adol_ipt=(regimen_adol=="6H")*(scenario=="tpt")*covg_adol/100,
+           adult_ipt=(regimen_adult=="6H")*(scenario=="tpt")*covg_adult/100,
+           child_3hp=(regimen_child=="3HP")*(scenario=="tpt")*covg_child/100,
+           adol_3hp=(regimen_adol=="3HP")*(scenario=="tpt")*covg_adol/100,
+           adult_3hp=(regimen_adult=="3HP")*(scenario=="tpt")*covg_adult/100,
+           child_1hp=(regimen_child=="1HP")*(scenario=="tpt")*covg_child/100,
+           adol_1hp=(regimen_adol=="1HP")*(scenario=="tpt")*covg_adol/100,
+           adult_1hp=(regimen_adult=="1HP")*(scenario=="tpt")*covg_adult/100,
+           scenario=if_else(scenario=="tpt", scenarios[[1]], scenarios[[2]]))
+
+    #separate into 3 dataframes - one for each target population group
   #hh contacts - targets include initiation, so backcalculate # contacts investigated
   
   #CHILD CONTACTS
@@ -1468,7 +1469,7 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            "initiate_1hp_covg"="child_1hp",
            "pop"="pop04", "hh"="hh_child") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg, #initiate_covg is now before adjusting for screening/testing negative and initiation ratios
+           hh_contact_covg = pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/child_params$p_initiate), 
            prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
                             initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
            prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
@@ -1543,7 +1544,7 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            "initiate_1hp_covg"="adol_1hp",
            "pop"="pop514", "hh"="hh_adol") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg, #initiate_covg is now before adjusting for screening/testing negative and initiation ratios
+           hh_contact_covg = pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(adol_params$p_initiate*p_hh_adol_tpt)),
            prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
                             initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
            prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
@@ -1614,7 +1615,7 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            "initiate_1hp_covg"="adult_1hp",
            "pop"="popadult", "hh"="hh_adult") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg, #initiate_covg is now before adjusting for screening/testing negative and initiation ratios
+           hh_contact_covg = pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(child_params$p_initiate*p_hh_child_tpt)),
            prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
                             initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
            prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
@@ -1693,6 +1694,18 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   adult_comb <- calc_costs(adult_comb, "adult", adult_params, 
                            0, adult_params, adult_params$disc_fac, start_yr)
   
+  child_comb <- child_comb %>% 
+    mutate(initiate_ipt=complete_ipt+part_complete_ipt+tox_nohosp_ipt+tox_hosp_ipt,
+           initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
+           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp)
+  adol_comb <- adol_comb %>% 
+    mutate(initiate_ipt=complete_ipt+part_complete_ipt+tox_nohosp_ipt+tox_hosp_ipt,
+           initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
+           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp)
+  adult_comb <- adult_comb %>% 
+    mutate(initiate_ipt=complete_ipt+part_complete_ipt+tox_nohosp_ipt+tox_hosp_ipt,
+           initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
+           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp)
   out <- list("child"=child_comb, "adol"=adol_comb, "adult"=adult_comb)
   return(out)
 }
@@ -1701,17 +1714,28 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
 
 regimens <- c("3HP", "1HP", "6H", "None")
 countries <- c("Nigeria", "Zambia")
+scenarios <- c("TPT Scaleup", "Comparator (no TPT)")
+cost_colors <- data.frame(row.names=c("cost_tx", "cost_art", "cost_contact", 
+                                      "cost_3hp", "cost_1hp", 
+                                      "cost_ipt", "cost_tox"),
+                          colors=brewer.pal(n=7, name="Set2"),
+                          labels=c("TB treatment", "ART",  "Contact investigation & diagnosis", 
+                                   "3HP drugs & clinic visits", "1HP drugs & clinic visits",
+                                   "6H drugs & clinic visits", "TPT toxicity management")
+                          )
 
 #Pt 1: User Interface (UI) - framework (structure for app's appearance)
 ui <- navbarPage(
   title="TB Preventive Treatment Budget Impact Tool",
-  theme=bs_theme(version=4, bootswatch="minty"),
+  theme=bs_theme(version=5, bootswatch="flatly"),
   tabPanel(
     title="Main",
     sidebarLayout(
       sidebarPanel(
-        width=3, 
-        h1("Mandatory Inputs"),
+        width=4, 
+        h3("Submit changes to inputs"),
+        actionButton("go", "Submit"),
+        h3("Specify changes to inputs"),
         shiny::selectInput(
           inputId="country",
           label="Select a country",
@@ -1725,7 +1749,9 @@ ui <- navbarPage(
         shiny::numericInput(
           inputId="covg_plhiv",
           label="Select TPT coverage level for PLHIV (0-100%)",
-          value=50
+          value=50,
+          min=0,
+          max=100
         ),
         shiny::selectInput(
           inputId="tpt_child",
@@ -1759,171 +1785,870 @@ ui <- navbarPage(
         )
       ),
       mainPanel(
-        h1("Results"),
+        h2("Results"),
+        headerPanel(""),
         fluidRow(column(6, plotlyOutput("plhiv_costs_sum")),
-                 column(6, plotlyOutput("child_costs_sum"))),
+                 column(6, plotlyOutput("plhiv_initiate"))),
+        headerPanel(""),
+        fluidRow(column(6, plotlyOutput("child_costs_sum")),
+                 column(6, plotlyOutput("child_initiate"))),
+        headerPanel(""),
         fluidRow(column(6, plotlyOutput("adol_costs_sum")),
-                 column(6, plotlyOutput("adult_costs_sum")))
+                 column(6, plotlyOutput("adol_initiate"))),
+        headerPanel(""),
+        fluidRow(column(6, plotlyOutput("adult_costs_sum")),
+                 column(6, plotlyOutput("adult_initiate")))
       )
     )
   ),
   tabPanel(
     title="PLHIV Results",
-    mainPanel(
-      h1("Additional results for PLHIV"),
-      fluidRow(column(6, plotlyOutput("plhiv_costs_tpt_detail")),
-               column(6, plotlyOutput("plhiv_costs_comp_detail"))),
-      fluidRow(column(6, plotlyOutput("plhiv_costs_tpt_detail_art")),
-               column(6, plotlyOutput("plhiv_costs_comp_detail_art")))
-    )
+    h2("Additional results for PLHIV"),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("plhiv_costs_tpt_detail")),
+              column(7, plotlyOutput("plhiv_costs_comp_detail"))),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("plhiv_costs_tpt_detail_art")),
+              column(7, plotlyOutput("plhiv_costs_comp_detail_art")))
   ),
   tabPanel(
-    title="Optional Inputs",
-    mainPanel(
-      h1("Specify optional parameters")
-    )
+    title="HH Contact Results",
+    h2("Additional results for Household Contacts"),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("child_costs_tpt_detail")),
+             column(7, plotlyOutput("child_costs_comp_detail"))),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("adol_costs_tpt_detail")),
+             column(7, plotlyOutput("adol_costs_comp_detail"))),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("adult_costs_tpt_detail")),
+             column(7, plotlyOutput("adult_costs_comp_detail")))
+
   ),
+  tabPanel(
+    title="Advanced Options",
+    h2("Submit changes when finished"),
+    actionButton("go_advanced", "Submit"),
+    h2("Specify optional parameters"),
+    h4("Vary Coverage by Year - PLHIV"),
+    fluidRow(
+      column(2, numericInput(
+        inputId="covg_plhiv_2024",
+        label="TPT coverage for PLHIV, 2024 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_plhiv_2025",
+        label="TPT coverage for PLHIV, 2025 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_plhiv_2026",
+        label="TPT coverage for PLHIV, 2026 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_plhiv_2027",
+        label="TPT coverage for PLHIV, 2027 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_plhiv_2028",
+        label="TPT coverage for PLHIV, 2028 (0-100%)",
+        value=50)),
+    ),
+    h4("Vary Coverage by Year - Contacts < 5"),
+    fluidRow(
+      column(2, numericInput(
+        inputId="covg_child_2024",
+        label="TPT coverage for Contacts < 5, 2024 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_child_2025",
+        label="TPT coverage for Contacts < 5, 2025 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_child_2026",
+        label="TPT coverage for Contacts < 5, 2026 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_child_2027",
+        label="TPT coverage for Contacts < 5, 2027 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_child_2028",
+        label="TPT coverage for Contacts < 5, 2028 (0-100%)",
+        value=50)),
+    ),
+    h4("Vary Coverage by Year - Contacts 5-14"),
+    fluidRow(
+      column(2, numericInput(
+        inputId="covg_adol_2024",
+        label="TPT coverage for Contacts 5-14, 2024 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adol_2025",
+        label="TPT coverage for Contacts 5-14, 2025 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adol_2026",
+        label="TPT coverage for Contacts 5-14, 2026 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adol_2027",
+        label="TPT coverage for Contacts 5-14, 2027 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adol_2028",
+        label="TPT coverage for Contacts 5-14, 2028 (0-100%)",
+        value=50)),
+    ),
+    h4("Vary Coverage by Year - Contacts 15+"),
+    fluidRow(
+      column(2, numericInput(
+        inputId="covg_adult_2024",
+        label="TPT coverage for Contacts 15+, 2024 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adult_2025",
+        label="TPT coverage for Contacts 15+, 2025 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adult_2026",
+        label="TPT coverage for Contacts 15+, 2026 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adult_2027",
+        label="TPT coverage for Contacts 15+, 2027 (0-100%)",
+        value=50)),
+      column(2, numericInput(
+        inputId="covg_adult_2028",
+        label="TPT coverage for Contacts 15+, 2028 (0-100%)",
+        value=50)),
+    ),
+    h4("Target Population Sizes - PLHIV"),
+    fluidRow(
+      column(2, numericInput(
+        inputId="new_plhiv_2024",
+        label="Newly enrolled PLHIV eligible for TPT, 2024",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2024) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="backlog_plhiv_2024",
+        label="PLHIV already on ART & eligible for TPT, 2024",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2024) %>% pull(backlog_none))),
+      column(2, numericInput(
+        inputId="new_plhiv_2025",
+        label="Newly enrolled PLHIV eligible for TPT, 2025",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2025) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="new_plhiv_2026",
+        label="Newly enrolled PLHIV eligible for TPT, 2026",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2026) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="new_plhiv_2027",
+        label="Newly enrolled PLHIV eligible for TPT, 2027",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2027) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="new_plhiv_2028",
+        label="Newly enrolled PLHIV eligible for TPT, 2028",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2028) %>% pull(plhiv_art_new_lag))),
+    ),
+    h4("Target Population Sizes - Household Contacts"),
+    fluidRow(
+      column(2, numericInput(
+        inputId="notif_2024",
+        label="Notified TB patients, 2024",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2024) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2025",
+        label="Notified TB patients, 2025",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2025) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2026",
+        label="Notified TB patients, 2026",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2026) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2027",
+        label="Notified TB patients, 2027",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2027) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2028",
+        label="Notified TB patients, 2028",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2028) %>% pull(tb_notif_new)))
+    ),
+    h4("TPT Drug Costs (all in USD per full course)"),
+    fluidRow(column(2, numericInput(
+      inputId="c_tpt_plhiv",
+      label="TPT cost per PLHIV",
+      value=14.25)),
+      column(2, numericInput(
+        inputId="c_tpt_child",
+        label="TPT cost per contact < 5",
+        value=6)),
+      column(2, numericInput(
+        inputId="c_tpt_adol",
+        label="TPT cost per contact 5-14",
+        value=12)),
+      column(2, numericInput(
+        inputId="c_tpt_adult",
+        label="TPT cost per contact 15+",
+        value=14.25))
+    ),
+    h4("Other Unit Costs (all in USD)"),
+    fluidRow(column(2, numericInput(
+      inputId="c_contact",
+      label="Cost to visit one household contact",
+      value=round(cost_params[['NGA']][["contact"]], 2))),
+      column(2, numericInput(
+        inputId="c_tx",
+        label="Cost of treating one patient for DS-TB",
+        value=round(cost_params[['NGA']][["tb_tx"]], 2))),
+      column(2, numericInput(
+        inputId="c_xray",
+        label="Cost to perform one chest X-ray",
+        value=round(cost_params[['NGA']][["xray"]], 2))),
+      column(2, numericInput(
+        inputId="c_xpert",
+        label="Cost to conduct one Xpert test",
+        value=round(cost_params[['NGA']][["xpert"]], 2))),
+      column(2, numericInput(
+        inputId="c_outpatient",
+        label="Cost of one outpatient visit",
+        value=10)),
+      column(2, numericInput(
+        inputId="c_art",
+        label="Annual cost of ART & viral load/CD4 testing for PLHIV)",
+        value=94.38))
+  )),
   tabPanel(
     title="Download Results",
-    mainPanel(
-      h1("Download full set of results")
+    sidebarLayout(
+      sidebarPanel(
+        h4("Download as CSV"),
+        width=3, 
+        downloadButton("downloadData", "Download")
+      ),
+      mainPanel(
+        h2("Full Output"),
+        tableOutput("table"),
+        style="font-size: 75%"
+      )
     )
   )
 )
   
 #Pt 2: Server - runs R code, graphs
-server <- function(input, output) {
-  rv <- reactiveValues()
-  observe({
+server <- function(input, output, session) {
+  iv <- InputValidator$new()
+  iv$add_rule("covg_plhiv", sv_between(0, 100))
+  iv$add_rule("covg_child", sv_between(0, 100))
+  iv$add_rule("covg_adol", sv_between(0, 100))
+  iv$add_rule("covg_adult", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2024", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2025", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2026", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2027", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2028", sv_between(0, 100))
+  iv$add_rule("covg_child_2024", sv_between(0, 100))
+  iv$add_rule("covg_child_2025", sv_between(0, 100))
+  iv$add_rule("covg_child_2026", sv_between(0, 100))
+  iv$add_rule("covg_child_2027", sv_between(0, 100))
+  iv$add_rule("covg_child_2028", sv_between(0, 100))
+  iv$add_rule("covg_adol_2024", sv_between(0, 100))
+  iv$add_rule("covg_adol_2025", sv_between(0, 100))
+  iv$add_rule("covg_adol_2026", sv_between(0, 100))
+  iv$add_rule("covg_adol_2027", sv_between(0, 100))
+  iv$add_rule("covg_adol_2028", sv_between(0, 100))
+  iv$add_rule("covg_adult_2024", sv_between(0, 100))
+  iv$add_rule("covg_adult_2025", sv_between(0, 100))
+  iv$add_rule("covg_adult_2026", sv_between(0, 100))
+  iv$add_rule("covg_adult_2027", sv_between(0, 100))
+  iv$add_rule("covg_adult_2028", sv_between(0, 100))
+  iv$enable()
+  #rv <- reactiveValues()
+  observeEvent(input$country, {
+    updateNumericInput(session, "c_contact", 
+                       value=round(cost_params[[country_info %>% filter(country==input$country) %>% pull(code)]][["contact"]], 2))
+    updateNumericInput(session, "c_tx", 
+                       value=round(cost_params[[country_info %>% filter(country==input$country) %>% pull(code)]][["tb_tx"]], 2))
+    updateNumericInput(session, "c_xray", 
+                       value=round(cost_params[[country_info %>% filter(country==input$country) %>% pull(code)]][["xray"]], 2))
+    updateNumericInput(session, "c_xpert", 
+                       value=round(cost_params[[country_info %>% filter(country==input$country) %>% pull(code)]][["xpert"]], 2))
+    updateNumericInput(session, "c_outpatient", 
+                       value=round(cost_params[[country_info %>% filter(country==input$country) %>% pull(code)]][["outpatient"]], 2))
+    updateNumericInput(session, "c_art", 
+                       value=round(plhiv_params[["c_art_yr"]], 2))
+    updateNumericInput(session, "new_plhiv_2024", value=round(pop_calcs %>% filter(country==input$country & year==2024) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "backlog_plhiv_2024", value=round(pop_calcs %>% filter(country==input$country & year==2024) %>% pull(backlog_none)))
+    updateNumericInput(session, "new_plhiv_2025", value=round(pop_calcs %>% filter(country==input$country & year==2025) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2026", value=round(pop_calcs %>% filter(country==input$country & year==2026) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2027", value=round(pop_calcs %>% filter(country==input$country & year==2027) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2028", value=round(pop_calcs %>% filter(country==input$country & year==2028) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "notif_2024", value=round(pop_calcs %>% filter(country==input$country & year==2024) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2025", value=round(pop_calcs %>% filter(country==input$country & year==2025) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2026", value=round(pop_calcs %>% filter(country==input$country & year==2026) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2027", value=round(pop_calcs %>% filter(country==input$country & year==2027) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2028", value=round(pop_calcs %>% filter(country==input$country & year==2028) %>% pull(tb_notif_new)))
+  })
+  observeEvent(input$covg_plhiv, {
+    updateNumericInput(session, "covg_plhiv_2024", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2025", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2026", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2027", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2028", value=input$covg_plhiv)
+  })
+  observeEvent(input$covg_child, {
+    updateNumericInput(session, "covg_child_2024", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2025", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2026", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2027", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2028", value=input$covg_child)
+  })
+  observeEvent(input$covg_adol, {
+    updateNumericInput(session, "covg_adol_2024", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2025", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2026", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2027", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2028", value=input$covg_adol)
+  })
+  observeEvent(input$covg_adult, {
+    updateNumericInput(session, "covg_adult_2024", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2025", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2026", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2027", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2028", value=input$covg_adult)
+  })
+  observeEvent(input$regimen_plhiv, {
+    updateNumericInput(session, "c_tpt_plhiv", 
+                       value= (input$regimen_plhiv=="6H")*plhiv_params$c_ipt + 
+                         (input$regimen_plhiv=="3HP")*plhiv_params$c_3hp +
+                         (input$regimen_plhiv=="1HP")*plhiv_params$c_1hp)
+  })
+  observeEvent(input$regimen_child, {
+    updateNumericInput(session, "c_tpt_child", 
+                       value= (input$regimen_child=="6H")*child_params$c_ipt + 
+                         (input$regimen_child=="3HP")*child_params$c_3hp +
+                         (input$regimen_child=="1HP")*child_params$c_1hp)
+  })
+  observeEvent(input$regimen_adol, {
+    updateNumericInput(session, "c_tpt_adol", 
+                       value= (input$regimen_adol=="6H")*adol_params$c_ipt + 
+                         (input$regimen_adol=="3HP")*adol_params$c_3hp +
+                         (input$regimen_adol=="1HP")*adol_params$c_1hp)
+  })
+  observeEvent(input$regimen_adult, {
+    updateNumericInput(session, "c_tpt_adult", 
+                       value= (input$regimen_adult=="6H")*adult_params$c_ipt + 
+                         (input$regimen_adult=="3HP")*adult_params$c_3hp +
+                         (input$regimen_adult=="1HP")*adult_params$c_1hp)
+  })
+  
+  rv <- eventReactive(input$go|input$go_advanced, {
+    #update parameters
     country_code <- country_info %>% filter(country==input$country) %>% pull(code)
-    #run model fo PLHIV
-    plhiv_params <- c(plhiv_params, other_params, unlist(cost_params[[country_code]]), 
-                "p_ltbi"=ltbi_params %>% filter(iso3==country_code) %>% pull(ltbi_prev), 
-                "p_notif_ltfu"=p_notif_adult[[country_code]],
-                "p_success"=p_success_plhiv[[country_code]],
-                "yrs_new"=2, "yrs"=10)
-    rv$plhiv_output <- run_model_plhiv(input$country, input$tpt_plhiv, input$covg_plhiv, NULL, plhiv_params)
-    child_params <- c(child_params, other_params, unlist(cost_params[[country_code]]), 
+    cost_params <- unlist(cost_params[[country_code]])
+    cost_params[["contact"]] <- input$c_contact
+    cost_params[["tb_tx"]] <- input$c_tx
+    cost_params[["xray"]] <- input$c_xray
+    cost_params[["xpert"]] <- input$c_xpert
+    cost_params[["outpatient"]] <- input$c_outpatient
+    plhiv_params[["c_art_yr"]] <- input$c_art
+    plhiv_params$c_1hp <- plhiv_params$c_3hp <- plhiv_params$c_ipt <- input$c_tpt_plhiv
+    child_params$c_1hp <- child_params$c_3hp <- child_params$c_ipt <- input$c_tpt_child
+    adol_params$c_1hp <- adol_params$c_3hp <- adol_params$c_ipt <- input$c_tpt_adol
+    adult_params$c_1hp <- adult_params$c_3hp <- adult_params$c_ipt <- input$c_tpt_adult
+    #update population sizes
+    pop_calcs <- pop_calcs %>% filter(code==country_code & year %in% 2024:2028) %>% #REDUNDANT - FIX LATER
+      mutate(backlog_none=if_else(year==2024, as.double(input$backlog_plhiv_2024), backlog_none),
+             plhiv_art_new_lag=c(input$new_plhiv_2024, input$new_plhiv_2025, input$new_plhiv_2026, input$new_plhiv_2027, input$new_plhiv_2028),
+             tb_notif_new=c(input$notif_2024, input$notif_2025, input$notif_2026, input$notif_2027, input$notif_2028))
+    #run model for PLHIV
+    plhiv_params <- c(plhiv_params, other_params, cost_params, 
+                      "p_ltbi"=ltbi_params %>% filter(iso3==country_code) %>% pull(ltbi_prev), 
+                      "p_notif_ltfu"=p_notif_adult[[country_code]],
+                      "p_success"=p_success_plhiv[[country_code]],
+                      "yrs_new"=2, "yrs"=10)
+    covg_plhiv <- c(input$covg_plhiv_2024, input$covg_plhiv_2025, input$covg_plhiv_2026, input$covg_plhiv_2027, input$covg_plhiv_2028)
+    plhiv_output <- run_model_plhiv(input$country, input$tpt_plhiv, covg_plhiv, scenarios, NULL, plhiv_params, pop_calcs)
+    child_params <- c(child_params, other_params, cost_params, 
                       "p_die"=p_child_die[[country_code]], 
                       "p_notif"=p_notif_child[[country_code]], 
                       "p_success"=p_success_child[[country_code]],
                       "life_exp"=life_exp_child[[country_code]], 
                       "yrs_new"=2, "yrs"=10)
-    adol_params <- c(adol_params, other_params, unlist(cost_params[[country_code]]), 
-                      "p_die"=p_adol_die[[country_code]], 
-                      "p_notif"=p_notif_adol[[country_code]], 
-                      "p_notif_1524"=p_notif_1524[[country_code]], 
-                      "p_success"=p_success_child[[country_code]],
-                      "life_exp"=life_exp_adol[[country_code]], 
-                      "yrs_new"=2, "yrs"=10)
-    adult_params <- c(adult_params, other_params, unlist(cost_params[[country_code]]), 
+    adol_params <- c(adol_params, other_params, cost_params, 
+                     "p_die"=p_adol_die[[country_code]], 
+                     "p_notif"=p_notif_adol[[country_code]], 
+                     "p_notif_1524"=p_notif_1524[[country_code]], 
+                     "p_success"=p_success_child[[country_code]],
+                     "life_exp"=life_exp_adol[[country_code]], 
+                     "yrs_new"=2, "yrs"=10)
+    adult_params <- c(adult_params, other_params, cost_params, 
                       "p_die"=p_adult_die[[country_code]], 
                       "p_notif"=p_notif_adult[[country_code]],
                       "p_success"=p_success_adult[[country_code]], 
                       "life_exp"=life_exp_adult[[country_code]],
                       "yrs_new"=2, "yrs"=10)
+    covg_child <- c(input$covg_child_2024, input$covg_child_2025, input$covg_child_2026, input$covg_child_2027, input$covg_child_2028)
+    covg_adol <- c(input$covg_adol_2024, input$covg_adol_2025, input$covg_adol_2026, input$covg_adol_2027, input$covg_adol_2028)
+    covg_adult <- c(input$covg_adult_2024, input$covg_adult_2025, input$covg_adult_2026, input$covg_adult_2027, input$covg_adult_2028)
     contacts_output <- run_model_contacts(input$country, input$tpt_child, input$tpt_adol, input$tpt_adult,
-                                          input$covg_child, input$covg_adol, input$covg_adult, NULL,
-                                          child_params, adol_params, adult_params)
-    rv$child_output <- contacts_output$child
-    rv$adol_output <- contacts_output$adol
-    rv$adult_output <- contacts_output$adult
+                                          covg_child, covg_adol, covg_adult, scenarios, NULL,
+                                          child_params, adol_params, adult_params, pop_calcs)
+    child_output <- contacts_output$child
+    adol_output <- contacts_output$adol
+    adult_output <- contacts_output$adult
+    out_sum <- bind_rows(plhiv_output %>% ungroup() %>% 
+                              mutate(pop="PLHIV",
+                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_plhiv, "None"),
+                                     coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_plhiv), 0),
+                                     year=as.integer(year)) %>%
+                              select(country, pop, year, scenario, 
+                                     regimen,coverage, starts_with("cost")),
+                            child_output %>% ungroup() %>% 
+                              mutate(pop="Contacts < 5",
+                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_child, "None"),
+                                     coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_child), 0),
+                                     year=as.integer(year)) %>%
+                              select(country, pop, year, scenario, 
+                                     regimen,coverage, starts_with("cost")),
+                            adol_output %>% ungroup() %>% 
+                              mutate(pop="Contacts 5-14",
+                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_adol, "None"),
+                                     coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_adol), 0),
+                                     year=as.integer(year)) %>%
+                              select(country, pop, year, scenario, 
+                                     regimen,coverage, starts_with("cost")),
+                            adult_output %>% ungroup() %>% 
+                              mutate(pop="Contacts 15+",
+                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_adult, "None"),
+                                     coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_adult),0),
+                                     year=as.integer(year)) %>%
+                              select(country, pop, year, scenario, 
+                                     regimen,coverage, starts_with("cost")))
+    list("plhiv_output"=plhiv_output, 
+         "child_output"=child_output, 
+         "adol_output"=adol_output, 
+         "adult_output"=adult_output, 
+         "out_sum"=out_sum)
     
-  })
+  }, ignoreNULL=FALSE)
+  output$table <- renderTable({rv()[["out_sum"]]})
+  output$downloadData <- downloadHandler(
+    filename=function() {
+      paste0("tpt_costs_", Sys.Date(), ".csv")
+    }, 
+    content=function(file) {
+      write.csv(rv()[["out_sum"]], file, row.names=F)
+    })
   output$plhiv_costs_sum <- renderPlotly({
-    plot_ly(rv$plhiv_output,
+    plot_ly(rv()$plhiv_output,
             x=~year,
-            y=~round(costs-cost_art),
+            y=~round(costs-cost_art, -4),
             type='bar',
-            split=~scenario) %>%
-      layout(title="Total TB-Related Costs, PLHIV",
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total TB-Related Costs, PLHIV </b>", x=0.1),
              yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             legend=list(x=1, y=0.5))
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
   output$child_costs_sum <- renderPlotly({
-    plot_ly(rv$child_output,
+    plot_ly(rv()$child_output,
             x=~year,
-            y=~round(costs),
+            y=~round(costs,-4),
             type='bar',
-            split=~scenario) %>%
-      layout(title="Total Costs, Contacts < 5 years",
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total Costs, Contacts < 5 </b>", x=0.1),
              yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             legend=list(x=1, y=0.5))
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
   output$adol_costs_sum <- renderPlotly({
-    plot_ly(rv$adol_output,
+    plot_ly(rv()$adol_output,
             x=~year,
-            y=~round(costs),
+            y=~round(costs,-4),
             type='bar',
-            split=~scenario) %>%
-      layout(title="Total Costs, Contacts 5-14 years",
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total Costs, Contacts 5-14 </b>", x=0.1),
              yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             legend=list(x=1, y=0.5))
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
   output$adult_costs_sum <- renderPlotly({
-    plot_ly(rv$adult_output,
+    plot_ly(rv()$adult_output,
             x=~year,
-            y=~round(costs),
+            y=~round(costs,-4),
             type='bar',
-            split=~scenario) %>%
-      layout(title="Total Costs, Contacts 15+ years",
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total Costs, Contacts 15+ </b>", x=0.1),
              yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             legend=list(x=1, y=0.5))
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$plhiv_initiate <- renderPlotly({
+    plot_ly(rv()$plhiv_output,
+            x=~year,
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -4), 
+            type='bar',
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total PLHIV Initiating TPT </b>", x=0.1),
+             yaxis=list(title="Number of People"),
+             xaxis=list(title="Year"),
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$child_initiate <- renderPlotly({
+    plot_ly(rv()$child_output,
+            x=~year,
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -2), 
+            type='bar',
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total Contacts < 5 Initiating TPT </b>", x=0.1),
+             yaxis=list(title="Number of People"),
+             xaxis=list(title="Year"),
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$adol_initiate <- renderPlotly({
+    plot_ly(rv()$adol_output,
+            x=~year,
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -2), 
+            type='bar',
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total Contacts 5-14 Initiating TPT </b>", x=0.1),
+             yaxis=list(title="Number of People"),
+             xaxis=list(title="Year"),
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$adult_initiate <- renderPlotly({
+    plot_ly(rv()$adult_output,
+            x=~year,
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -2), 
+            type='bar',
+            color=~scenario,
+            colors=c("#04a3bd","#f0be3d")) %>%
+      layout(title=list(text="<b> Total Contacts 15+ Initiating TPT </b>", x=0.1),
+             yaxis=list(title="Number of People"),
+             xaxis=list(title="Year"),
+             legend=list(x=-0.1, y=-0.25),
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
   output$plhiv_costs_tpt_detail <- renderPlotly({
-    plot_ly(rv$plhiv_output %>% filter(scenario=="Specified TPT Scenario"),
-            x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
-            type='bar', name="TPT Costs") %>% 
-      add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%
-      add_trace(y=~cost_tx, name="TB Treatment Costs") %>%
+    plot_ly(rv()$plhiv_output %>% filter(scenario==scenarios[[1]]),
+            x=~year, y=~round(cost_tx,-4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             title="Detailed TB-Related Costs, Scenario with TPT",
-             legend=list(x=0, y=-0.5),
-             barmode="stack")
+             title=list(text="<b> Detailed TB-Related Costs, Scenario with TPT </b>", x=0.1),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      hide_legend() %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
   output$plhiv_costs_comp_detail <- renderPlotly({
-    plot_ly(rv$plhiv_output %>% filter(scenario=="Comparator Scenario (no TPT)"),
-            x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
-            type='bar', name="TPT Costs") %>% 
-      add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%
-      add_trace(y=~cost_tx, name="TB Treatment Costs") %>%
+    plot_ly(rv()$plhiv_output %>% filter(scenario==scenarios[[2]]),
+            x=~year, y=~round(cost_tx,-4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             title="Detailed TB-Related Costs, Scenario without TPT",
-             legend=list(x=0, y=-0.5),
-             barmode="stack")
+             title=list(text="<b> Detailed TB-Related Costs, Scenario without TPT </b>", x=0.1),
+             legend=list(x=1, y=0.5, title=list(text="<b> Cost Categories </b>")),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
   output$plhiv_costs_tpt_detail_art <- renderPlotly({
-    plot_ly(rv$plhiv_output %>% filter(scenario=="Specified TPT Scenario"),
-            x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
-            type='bar', name="TPT Costs") %>% 
-      add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%
-      add_trace(y=~cost_tx, name="TB Treatment Costs") %>%
-      add_trace(y=~cost_art, name="ART Costs") %>%
+    plot_ly(rv()$plhiv_output %>% filter(scenario==scenarios[[1]]),
+            x=~year, y=~round(cost_art,-4),
+            type='bar', name=cost_colors["cost_art", "labels"], 
+            color=I(cost_colors["cost_art", "colors"])) %>% 
+      add_trace(y=~round(cost_tx,-4), name=cost_colors["cost_tx", "labels"], 
+                color=I(cost_colors["cost_tx", "colors"])) %>%
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             title="Detailed Total Costs, Scenario with TPT",
-             legend=list(x=0, y=-0.5),
-             barmode="stack")
+             title=list(text="<b> Detailed Total Costs, Scenario with TPT </b>", x=0.1),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      hide_legend() %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
   output$plhiv_costs_comp_detail_art <- renderPlotly({
-    plot_ly(rv$plhiv_output %>% filter(scenario=="Comparator Scenario (no TPT)"),
-            x=~year, y=~cost_ipt+cost_3hp+cost_1hp,
-            type='bar', name="TPT Costs") %>% 
-      add_trace(y=~cost_tox, name="TPT Toxicity Costs") %>%
-      add_trace(y=~cost_tx, name="TB Treatment Costs") %>%
-      add_trace(y=~cost_art, name="ART Costs") %>%
+    plot_ly(rv()$plhiv_output %>% filter(scenario==scenarios[[2]]),
+            x=~year, y=~round(cost_art,-4),
+            type='bar', name=cost_colors["cost_art", "labels"], 
+            color=I(cost_colors["cost_art", "colors"])) %>% 
+      add_trace(y=~round(cost_tx,-4), name=cost_colors["cost_tx", "labels"], 
+                color=I(cost_colors["cost_tx", "colors"])) %>%
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
-             title="Detailed Total Costs, Scenario without TPT",
-             legend=list(x=0, y=-0.5),
-             barmode="stack")
+             legend=list(x=1, y=0.5, title=list(text="<b> Cost Categories </b>")),
+             title=list(text="<b> Detailed Total Costs, Scenario without TPT </b>", x=0.1),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
   })
+  output$child_costs_tpt_detail <- renderPlotly({
+    plot_ly(rv()$child_output %>% filter(scenario==scenarios[[1]]),
+            x=~year, y=~round(cost_tx,-4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
+                color=I(cost_colors["cost_contact", "colors"])) %>%
+      layout(yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             title=list(text="<b> Contacts < 5 Costs, Scenario with TPT </b>", x=0.1),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      hide_legend() %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$child_costs_comp_detail <- renderPlotly({
+    plot_ly(rv()$child_output %>% filter(scenario==scenarios[[2]]),
+            x=~year, y=~round(cost_tx, -4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
+                color=I(cost_colors["cost_contact", "colors"])) %>%
+      layout(yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             title=list(text="<b> Contacts < 5 Costs, Scenario without TPT </b>", x=0.1),
+             legend=list(x=1, y=0.5, title=list(text="<b> Cost Categories </b>")),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$adol_costs_tpt_detail <- renderPlotly({
+    plot_ly(rv()$adol_output %>% filter(scenario==scenarios[[1]]),
+            x=~year, y=~round(cost_tx,-4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
+                color=I(cost_colors["cost_contact", "colors"])) %>%
+      layout(yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             title=list(text="<b> Contacts 5-14 Costs, Scenario with TPT </b>", x=0.1),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      hide_legend() %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$adol_costs_comp_detail <- renderPlotly({
+    plot_ly(rv()$adol_output %>% filter(scenario==scenarios[[2]]),
+            x=~year, y=~round(cost_tx, -4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
+                color=I(cost_colors["cost_contact", "colors"])) %>%
+      layout(yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             title=list(text="<b> Contacts 5-14 Costs, Scenario without TPT </b>", x=0.1),
+             legend=list(x=1, y=0.5, title=list(text="<b> Cost Categories </b>")),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$adult_costs_tpt_detail <- renderPlotly({
+    plot_ly(rv()$adult_output %>% filter(scenario==scenarios[[1]]),
+            x=~year, y=~round(cost_tx,-4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
+                color=I(cost_colors["cost_contact", "colors"])) %>%
+      layout(yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             title=list(text="<b> Contacts 15+ Costs, Scenario with TPT </b>", x=0.1),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      hide_legend() %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  output$adult_costs_comp_detail <- renderPlotly({
+    plot_ly(rv()$adult_output %>% filter(scenario==scenarios[[2]]),
+            x=~year, y=~round(cost_tx, -4),
+            type='bar', name=cost_colors["cost_tx", "labels"], 
+            color=I(cost_colors["cost_tx", "colors"])) %>% 
+      add_trace(y=~round(cost_ipt,-4), name=cost_colors["cost_ipt", "labels"], 
+                color=I(cost_colors["cost_ipt", "colors"])) %>%
+      add_trace(y=~round(cost_3hp,-4), name=cost_colors["cost_3hp", "labels"], 
+                color=I(cost_colors["cost_3hp", "colors"])) %>%
+      add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
+                color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
+                color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
+                color=I(cost_colors["cost_contact", "colors"])) %>%
+      layout(yaxis=list(title="Annual Costs (USD)"),
+             xaxis=list(title="Year"),
+             title=list(text="<b> Contacts 15+ Costs, Scenario without TPT </b>", x=0.1),
+             legend=list(x=1, y=0.5, title=list(text="<b> Cost Categories </b>")),
+             barmode="stack", bargap=0.3,
+             modebar=list(orientation='v')) %>%
+      config(displaylogo=F,
+             modeBarButtonsToRemove=c('select2d', 'lasso2d',
+                                      'autoScale2d', 'zoom2d',
+                                      'zoomIn2d', 'zoomOut2d',
+                                      'pan2d', 'resetScale2d'))
+  })
+  
 }
 
 shinyApp(ui=ui, server=server)

@@ -1,0 +1,14 @@
+name: tpt-budget-impact
+title: tpt-budget-impact
+username:
+account: tessryckman
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9096347
+bundleId: 7210200
+url: https://tessryckman.shinyapps.io/tpt-budget-impact/
+when: 1683902248.37943
+lastSyncTime: 1683902248.37945
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: countries.csv|country_params.R|country_params.Rda|model_functions.R|params.R|params.Rda|pub_targets.Rda
