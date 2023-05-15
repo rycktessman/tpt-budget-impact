@@ -1151,12 +1151,12 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
            initiate_1hp_covg_prev=0)
   pop_calcs_tpt <- pop_calcs %>% 
     mutate(scenario=scenarios[[1]],
-           initiate_ipt_covg_new=(covg/100)*(regimen=="6H"),
-           initiate_ipt_covg_prev=(covg/100)*(regimen=="6H"),
-           initiate_3hp_covg_new=(covg/100)*(regimen=="3HP"),
-           initiate_3hp_covg_prev=(covg/100)*(regimen=="3HP"),
-           initiate_1hp_covg_new=(covg/100)*(regimen=="1HP"),
-           initiate_1hp_covg_prev=(covg/100)*(regimen=="1HP"))
+           initiate_ipt_covg_new=pmin(1, (covg/(100*params$p_initiate))*(regimen=="6H")),
+           initiate_ipt_covg_prev=pmin(1, (covg/(100*params$p_initiate))*(regimen=="6H")),
+           initiate_3hp_covg_new=pmin(1, (covg/(100*params$p_initiate))*(regimen=="3HP")),
+           initiate_3hp_covg_prev=pmin(1, (covg/(100*params$p_initiate))*(regimen=="3HP")),
+           initiate_1hp_covg_new=pmin(1, (covg/(100*params$p_initiate))*(regimen=="1HP")),
+           initiate_1hp_covg_prev=pmin(1, (covg/(100*params$p_initiate))*(regimen=="1HP")))
   pop <- bind_rows(pop_calcs_none, pop_calcs_tpt)
   
   #set up model
@@ -1379,8 +1379,11 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   end_yr <- start_yr + analytic_horizon - 1
   policy_end_yr <- start_yr + policy_horizon - 1
   
+  contact_only_child <- 1*(regimen_child=="None") 
+  contact_only_adol <- 1*(regimen_adol=="None") 
+  contact_only_adult <- 1*(regimen_adult=="None") 
+  
   #options to be added later
-  contact_only <- 0 #base case = include TPT too (0); sensitivity analysis = only contact investigation (1); or TPT Vs. CI (2)
   reinfect <- 0 #0=base case, or annual risk of infection
   visits_3hp <- 1 #1 or 3 visits (1 in main analysis). initiation visit is separate (part of screening)
   cxr_screen_5plus <- 1 #whether to include CXR in the screening algorithm for contacts aged 5+ (w/ symptom screen, vs. symptom screen alone)
@@ -1457,6 +1460,9 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            child_1hp=(regimen_child=="1HP")*(scenario=="tpt")*covg_child/100,
            adol_1hp=(regimen_adol=="1HP")*(scenario=="tpt")*covg_adol/100,
            adult_1hp=(regimen_adult=="1HP")*(scenario=="tpt")*covg_adult/100,
+           child_none=(contact_only_child==1)*(scenario=="tpt")*covg_child/100,
+           adol_none=(contact_only_adol==1)*(scenario=="tpt")*covg_adol/100,
+           adult_none=(contact_only_adult==1)*(scenario=="tpt")*covg_adult/100,
            scenario=if_else(scenario=="tpt", scenarios[[1]], scenarios[[2]]))
 
     #separate into 3 dataframes - one for each target population group
@@ -1469,16 +1475,17 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            "initiate_1hp_covg"="child_1hp",
            "pop"="pop04", "hh"="hh_child") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/child_params$p_initiate), 
-           prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
+           hh_contact_covg = (contact_only_child==1)*child_none + 
+             (contact_only_child==0)*pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(child_params$p_initiate)), 
+           prop_ipt=if_else(initiate_ipt_covg==0|contact_only_child==1, 0,
                             initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
-           prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
+           prop_3hp=if_else(initiate_3hp_covg==0|contact_only_child==1, 0, 
                             initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
-           prop_1hp=if_else(initiate_1hp_covg==0|contact_only==1, 0, 
+           prop_1hp=if_else(initiate_1hp_covg==0|contact_only_child==1, 0, 
                             initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
            contact_invest_num = hh_contact_covg*total,
            initiate_num=contact_invest_num*p_hh_child_tpt*child_params$p_initiate,
-           p_initiate=if_else(contact_only==1, 0, child_params$p_initiate)) %>%
+           p_initiate=if_else(contact_only_child==1, 0, child_params$p_initiate)) %>%
     select(country, code, year, scenario,
            pop, hh, total, prop_ipt, prop_3hp, prop_1hp, contact_invest_num, initiate_num, p_initiate)
   child <- child %>% mutate(p_notif=child_params$p_notif,
@@ -1544,16 +1551,17 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            "initiate_1hp_covg"="adol_1hp",
            "pop"="pop514", "hh"="hh_adol") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(adol_params$p_initiate*p_hh_adol_tpt)),
-           prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
+           hh_contact_covg = (contact_only_adol==1)*adol_none + 
+             (contact_only_adol==0)*pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(adol_params$p_initiate)),            
+           prop_ipt=if_else(initiate_ipt_covg==0|contact_only_adol==1, 0,
                             initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
-           prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
+           prop_3hp=if_else(initiate_3hp_covg==0|contact_only_adol==1, 0, 
                             initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
-           prop_1hp=if_else(initiate_1hp_covg==0|contact_only==1, 0, 
+           prop_1hp=if_else(initiate_1hp_covg==0|contact_only_adol==1, 0, 
                             initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
            contact_invest_num = hh_contact_covg*total,
            initiate_num=contact_invest_num*p_hh_adol_tpt*adol_params$p_initiate,
-           p_initiate=if_else(contact_only==1, 0, adol_params$p_initiate)) %>%
+           p_initiate=if_else(contact_only_adol==1, 0, adol_params$p_initiate)) %>%
     select(country, code, year, scenario,
            pop, hh, total, prop_ipt, prop_3hp, prop_1hp, contact_invest_num, initiate_num, p_initiate)
   adol <- adol %>% mutate(p_notif=adol_params$p_notif,
@@ -1615,16 +1623,17 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            "initiate_1hp_covg"="adult_1hp",
            "pop"="popadult", "hh"="hh_adult") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(child_params$p_initiate*p_hh_child_tpt)),
-           prop_ipt=if_else(initiate_ipt_covg==0|contact_only==1, 0,
+           hh_contact_covg = (contact_only_adult==1)*adult_none + 
+             (contact_only_adult==0)*pmin(1, (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(adult_params$p_initiate)),            
+           prop_ipt=if_else(initiate_ipt_covg==0|contact_only_adult==1, 0,
                             initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
-           prop_3hp=if_else(initiate_3hp_covg==0|contact_only==1, 0, 
+           prop_3hp=if_else(initiate_3hp_covg==0|contact_only_adult==1, 0, 
                             initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
-           prop_1hp=if_else(initiate_1hp_covg==0|contact_only==1, 0, 
+           prop_1hp=if_else(initiate_1hp_covg==0|contact_only_adult==1, 0, 
                             initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)),
            contact_invest_num = hh_contact_covg*total,
            initiate_num=contact_invest_num*p_hh_adult_tpt*adult_params$p_initiate,
-           p_initiate=if_else(contact_only==1, 0, adult_params$p_initiate)) %>%
+           p_initiate=if_else(contact_only_adult==1, 0, adult_params$p_initiate)) %>%
     select(country, code, year, scenario,
            pop, hh, total, prop_ipt, prop_3hp, prop_1hp, contact_invest_num, initiate_num, p_initiate)
   adult <- adult %>% mutate(p_notif=adult_params$p_notif,
@@ -1972,6 +1981,24 @@ ui <- navbarPage(
         label="Notified TB patients, 2028",
         value=pop_calcs %>% filter(country==countries[[1]] & year==2028) %>% pull(tb_notif_new)))
     ),
+    h4("TPT Acceptance & Refusal"),
+    fluidRow(column(2, numericInput(
+      inputId="initiate_plhiv",
+      label="TPT Acceptance, PLHIV (%)",
+      value=73.5)),
+      column(2, numericInput(
+        inputId="initiate_child",
+        label="TPT Acceptance, Contacts < 5 (%)",
+        value=73.5)),
+      column(2, numericInput(
+        inputId="initiate_adol",
+        label="TPT Acceptance, Contacts 5-14 (%)",
+        value=73.5)),
+      column(2, numericInput(
+        inputId="initiate_adult",
+        label="TPT Acceptance, Contacts 15+ (%)",
+        value=73.5))
+    ),
     h4("TPT Drug Costs (all in USD per full course)"),
     fluidRow(column(2, numericInput(
       inputId="c_tpt_plhiv",
@@ -2030,6 +2057,30 @@ ui <- navbarPage(
         style="font-size: 75%"
       )
     )
+  ),
+  tabPanel(
+    title="Help",
+    h4("Instructions"),
+    HTML("<br> This tool can be used to estimate the costs of scaling up a TB preventive treatment program for people with HIV (PLHIV) and/or household contacts of notified TB patients (contacts). Costs are calculated for a TPT scenario, which the user specifies, and a Comparator scenario, which includes 0% TPT coverage and 0% coverage of household contact investigation"),
+    HTML("<br> <br> To get started, navigate to the <b> Main </b> tab using the toolbar on the top of your browser screen. "),
+    HTML("Select a country using the dropdown menu, then select the desired coverage level (proportion of eligible PLHIV or household contacts that initiate TPT each year) and regimen (3HP, 1HP, 6H, or None/No TPT), and then click the <b> Submit </b> button on the top left, which runs the model and updates the figures."),
+    HTML("For household contacts, selecting None as the regimen type indicates coverage of contact investigation only. For PLHIV, selecting None is identical to selecting 0% TPT coverage."),
+    HTML("Note that coverage is defined as the percent of the eligible target population initiating TPT. Because of < 100% TPT acceptance, coverage can be effectively capped at < 100%. This can be adjusted in <b> Advanced Options </b> (see below)."),
+    HTML("The tool will automatically populate with parameters relevant to a given country (e.g., size of target populations, unit costs) and regimen (e.g., drug costs and completion), and will assume the same coverage level over a 5-year period."),
+    HTML("<br> <br> These automatic updates can be manually changed in the <b> Advanced Options </b> tab."),
+    HTML("This tab allows users to specify TPT coverage that varies by year, update the underlying sizes of the target populations, and impute unit costs."),
+    HTML("Be sure to click the <b> Submit </b> button after making changes in this tab. <br>"),
+    HTML("<br> <p> Some definitions relevant to parameters in the <b> Advanced Options </b> tab are included below: </p>
+         <ul>
+         <li> TPT coverage: proportion of eligible PLHIV or eligible household contacts that initiate TPT in a given year. </li>
+         <li> PLHIV target population sizes: users can manually specify the number of PLHIV newly enrolled on ART each year that would be eligible for TPT, as well as the number of PLHIV in 2024 that had been enrolled on ART in a previous year, had not yet received TPT, and are eligible for TPT. The number of previously-enrolled PLHIV eligible for TPT in subsequent years is automatically calculated by the model as a function of the number previously enrolled in 2024, the numbers newly enrolled each year, and TPT coverage each year. </li>
+         <li> Household contact target population sizes: users can manually specify the number of TB notifications each year. The number of notifications is combined with country-specific estimates of household size (by age) and user-provided TPT coverage for contacts, to calculate the number of contacts, by age, that receive TPT each year. </li>
+         <li> TPT acceptance and refusal: the tool automatically assumes 73.5% TPT acceptance. That is, 26.5% of eligible individuals offered TPT are assumed to refuse it. Therefore, TPT coverage cannot effectively equal 100% unless this parameter is also set at 100%. </li>
+         <li> TPT drug costs: specify the cost per full course of TPT (drugs only, in US Dollars) for each target population. </li>
+         <li> Other unit costs: specify the cost of other components of TB prevention and treatment (in US Dollars). </li>
+         </ul>"),
+    HTML("The tool assumes that active TB disease among contacts < 5 years old is detected via household visit with symptom screening only and confirmatory diagnosis using Chest Xray. For contacts aged 5 years above, active disease is assumed to be detected via household visit with symptom screening and chest Xray, with confirmatory diagnosis via Xpert. All contacts for whom active disease is not detected are assumed to be eligible to initiate TPT.  All contacts for whom active disease is detected incur costs of DS-TB treatment. The comparator scenario assumes no TPT and no contact investigation. Under this scenario, household contacts with active disease would only be diagnosed based on country-specific case detection ratios (estimated by the WHO)."),
+    HTML("<br> <br> For PLHIV, the tool assumes that PLHIV on ART with active TB disease would be diagnosed through routine health center visits, and that (under the TPT scenario) PLHIV would otherwise be eligible for TPT.")
   )
 )
   
@@ -2060,6 +2111,10 @@ server <- function(input, output, session) {
   iv$add_rule("covg_adult_2026", sv_between(0, 100))
   iv$add_rule("covg_adult_2027", sv_between(0, 100))
   iv$add_rule("covg_adult_2028", sv_between(0, 100))
+  iv$add_rule("initiate_plhiv", sv_between(0.1, 100))
+  iv$add_rule("initiate_child", sv_between(0.1, 100))
+  iv$add_rule("initiate_adol", sv_between(0.1, 100))
+  iv$add_rule("initiate_adult", sv_between(0.1, 100))
   iv$enable()
   #rv <- reactiveValues()
   observeEvent(input$country, {
@@ -2154,6 +2209,10 @@ server <- function(input, output, session) {
     child_params$c_1hp <- child_params$c_3hp <- child_params$c_ipt <- input$c_tpt_child
     adol_params$c_1hp <- adol_params$c_3hp <- adol_params$c_ipt <- input$c_tpt_adol
     adult_params$c_1hp <- adult_params$c_3hp <- adult_params$c_ipt <- input$c_tpt_adult
+    plhiv_params$p_initiate <- input$initiate_plhiv/100
+    child_params$p_initiate <- input$initiate_child/100
+    adol_params$p_initiate <- input$initiate_adol/100
+    adult_params$p_initiate <- input$initiate_adult/100
     #update population sizes
     pop_calcs <- pop_calcs %>% filter(code==country_code & year %in% 2024:2028) %>% #REDUNDANT - FIX LATER
       mutate(backlog_none=if_else(year==2024, as.double(input$backlog_plhiv_2024), backlog_none),
