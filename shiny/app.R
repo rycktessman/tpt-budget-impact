@@ -1857,15 +1857,15 @@ ui <- navbarPage(
                value=50)),
              column(2, numericInput(
                inputId="split_plhiv_3hp_2024", 
-               label=strong("Proportion 3HP (%)"),
+               label=em(strong("Percent 3HP")),
                value=100)),
              column(2, numericInput(
                inputId="split_plhiv_1hp_2024",
-               label=strong("Proportion 1HP (%)"),
+               label=em(strong("Percent 1HP")),
                value=0)),
              column(2, numericInput(
                inputId="split_plhiv_6h_2024",
-               label=strong("Proportion 6H (%)"),
+               label=em(strong("Percent 6H")),
                value=0)),
              column(2, textOutput('split_plhiv_2024'))),
     div(style="margin-top:-1em", 
@@ -1957,19 +1957,19 @@ ui <- navbarPage(
                value=50)),
              column(2, numericInput(
                inputId="split_child_3hp_2024", 
-               label=strong("Proportion 3HP (%)"),
+               label=em(strong("Percent 3HP")),
                value=100)),
              column(2, numericInput(
                inputId="split_child_1hp_2024",
-               label=strong("Proportion 1HP (%)"),
+               label=em(strong("Percent 1HP")),
                value=0)),
              column(2, numericInput(
                inputId="split_child_6h_2024",
-               label=strong("Proportion 6H (%)"),
+               label=em(strong("Percent 6H")),
                value=0)),
              column(2, numericInput(
                inputId="split_child_none_2024",
-               label=strong("Proportion No TPT (%)"),
+               label=em(strong("Percent No TPT")),
                value=0)),
              column(1, textOutput('split_child_2024'))),
     div(style="margin-top:-1em", 
@@ -2077,19 +2077,19 @@ ui <- navbarPage(
                value=50)),
              column(2, numericInput(
                inputId="split_adol_3hp_2024", 
-               label=strong("Proportion 3HP (%)"),
+               label=em(strong("Percent 3HP")),
                value=100)),
              column(2, numericInput(
                inputId="split_adol_1hp_2024",
-               label=strong("Proportion 1HP (%)"),
+               label=em(strong("Percent 1HP")),
                value=0)),
              column(2, numericInput(
                inputId="split_adol_6h_2024",
-               label=strong("Proportion 6H (%)"),
+               label=em(strong("Percent 6H")),
                value=0)),
              column(2, numericInput(
                inputId="split_adol_none_2024",
-               label=strong("Proportion No TPT (%)"),
+               label=em(strong("Percent No TPT")),
                value=0)),
              column(1, textOutput('split_adol_2024'))),
     div(style="margin-top:-1em", 
@@ -2197,19 +2197,19 @@ ui <- navbarPage(
                value=50)),
              column(2, numericInput(
                inputId="split_adult_3hp_2024", 
-               label=strong("Proportion 3HP (%)"),
+               label=em(strong("Percent 3HP")),
                value=100)),
              column(2, numericInput(
                inputId="split_adult_1hp_2024",
-               label=strong("Proportion 1HP (%)"),
+               label=em(strong("Percent 1HP")),
                value=0)),
              column(2, numericInput(
                inputId="split_adult_6h_2024",
-               label=strong("Proportion 6H (%)"),
+               label=em(strong("Percent 6H")),
                value=0)),
              column(2, numericInput(
                inputId="split_adult_none_2024",
-               label=strong("Proportion No TPT (%)"),
+               label=em(strong("Percent No TPT")),
                value=0)),
              column(1, textOutput('split_adult_2024'))),
     div(style="margin-top:-1em", 
@@ -2477,26 +2477,32 @@ ui <- navbarPage(
   tabPanel(
     title="Help",
     h4("Instructions"),
-    HTML("<br> This tool can be used to estimate the costs of scaling up a TB preventive treatment program for people with HIV (PLHIV) and/or household contacts of notified TB patients (contacts). Costs are calculated for a TPT scenario, which the user specifies, and a Comparator scenario, which includes 0% TPT coverage and 0% coverage of household contact investigation"),
+    HTML("<br> This tool can be used to estimate the costs of scaling up a TB preventive treatment program for people with HIV (PLHIV) and/or household contacts of notified TB patients (contacts). Costs are calculated for a <i> TPT Scenario </i>, which the user specifies, and a <i> Comparator Scenario </i>, which includes 0% TPT coverage and 0% coverage of household contact investigation"),
     HTML("<br> <br> To get started, navigate to the <b> Main </b> tab using the toolbar on the top of your browser screen. "),
     HTML("Select a country using the dropdown menu, then select the desired coverage level (proportion of eligible PLHIV or household contacts that initiate TPT each year) and regimen (3HP, 1HP, 6H, or None/No TPT), and then click the <b> Submit </b> button on the top left, which runs the model and updates the figures."),
-    HTML("For household contacts, selecting None as the regimen type indicates coverage of contact investigation only. For PLHIV, selecting None is identical to selecting 0% TPT coverage."),
-    HTML("Note that coverage is defined as the percent of the eligible target population initiating TPT. Because of < 100% TPT acceptance, coverage can be effectively capped at < 100%. This can be adjusted in <b> Advanced Options </b> (see below)."),
-    HTML("The tool will automatically populate with parameters relevant to a given country (e.g., size of target populations, unit costs) and regimen (e.g., drug costs and completion), and will assume the same coverage level over a 5-year period."),
-    HTML("<br> <br> These automatic updates can be manually changed in the <b> Advanced Options </b> tab."),
-    HTML("This tab allows users to specify TPT coverage that varies by year, update the underlying sizes of the target populations, and impute unit costs."),
-    HTML("Be sure to click the <b> Submit </b> button after making changes in this tab. <br>"),
-    HTML("<br> <p> Some definitions relevant to parameters in the <b> Advanced Options </b> tab are included below: </p>
+    HTML("For household contacts, selecting None as the regimen type indicates coverage of contact investigation only. This option is not available for PLHIV."),
+    HTML("Note that coverage is defined as the percent of the eligible target population initiating TPT. Because of < 100% TPT acceptance, coverage can be effectively capped at < 100% - but this can be adjusted in <b> Other Options </b> (see below)."),
+    HTML("<br> <br> The tool will automatically populate with parameters relevant to a given country (e.g., size of target populations, unit costs) and regimen (e.g., drug costs and completion), and will assume the same coverage level over a 5-year period."),
+    HTML("These automatic updates can be manually changed in the <b> Advanced Coverage Options </b> and <b> Other Options </b> tabs."),
+    HTML("Be sure to click the <b> Submit </b> button after making any changes in either tab. <br>"),
+    HTML("<br> The <b> Advanced Coverage Options </b> tab allows users to specify TPT coverage for each target population that varies by year and can include multiple TPT regimens. Changes to this tab apply to the <i> TPT Scenario </i> only. In this tab: 
          <ul>
-         <li> TPT coverage: proportion of eligible PLHIV or eligible household contacts that initiate TPT in a given year. </li>
-         <li> PLHIV target population sizes: users can manually specify the number of PLHIV newly enrolled on ART each year that would be eligible for TPT, as well as the number of PLHIV in 2024 that had been enrolled on ART in a previous year, had not yet received TPT, and are eligible for TPT. The number of previously-enrolled PLHIV eligible for TPT in subsequent years is automatically calculated by the model as a function of the number previously enrolled in 2024, the numbers newly enrolled each year, and TPT coverage each year. </li>
-         <li> Household contact target population sizes: users can manually specify the number of TB notifications each year. The number of notifications is combined with country-specific estimates of household size (by age) and user-provided TPT coverage for contacts, to calculate the number of contacts, by age, that receive TPT each year. </li>
-         <li> TPT acceptance and refusal: the tool automatically assumes 73.5% TPT acceptance. That is, 26.5% of eligible individuals offered TPT are assumed to refuse it. Therefore, TPT coverage cannot effectively equal 100% unless this parameter is also set at 100%. </li>
-         <li> TPT drug costs: specify the cost per full course of TPT (drugs only, in US Dollars) for each target population. </li>
-         <li> Other unit costs: specify the cost of other components of TB prevention and treatment (in US Dollars). </li>
+         <li> For PLHIV, <b> TPT coverage </b> is defined as the percent (from 0-100%) of eligible PLHIV that initiate any type of TPT in a given year. </li>
+         <li> For household contacts, <b> TPT coverage </b> is defined as the percent (from 0-100%) of eligible contacts that are investigated for TB and/or initiate any type of TPT in a given year. </li>
+         <li> For both PLHIV and contacts, the remaining columns in <b> Advanced Coverage Options </b> indicate the split of TPT coverage by regimen (and for household contacts, no TPT, with contact investigation only). Note that these percentages must sum to 100%. </li>
          </ul>"),
-    HTML("The tool assumes that active TB disease among contacts < 5 years old is detected via household visit with symptom screening only and confirmatory diagnosis using Chest Xray. For contacts aged 5 years above, active disease is assumed to be detected via household visit with symptom screening and chest Xray, with confirmatory diagnosis via Xpert. All contacts for whom active disease is not detected are assumed to be eligible to initiate TPT.  All contacts for whom active disease is detected incur costs of DS-TB treatment. The comparator scenario assumes no TPT and no contact investigation. Under this scenario, household contacts with active disease would only be diagnosed based on country-specific case detection ratios (estimated by the WHO)."),
-    HTML("<br> <br> For PLHIV, the tool assumes that PLHIV on ART with active TB disease would be diagnosed through routine health center visits, and that (under the TPT scenario) PLHIV would otherwise be eligible for TPT.")
+    HTML("For example, specifying 40% total coverage for contacts aged 5-14 years, with Percent 3HP = 50%, Percent 1HP = 25%, Percent 6H = 0%, and Percent No TPT = 25%, would mean that 20% of eligible household contacts 5-14 intitiate 3HP, 10% initiate 1HP, 10% receive contact investigation only but don't initiate any TPT, and 60% are not investigated (and do not initiate TPT)."),
+    HTML("<br> <br> The <b> Other Options </b> tab allows users to update the underlying sizes of the target populations, change TPT acceptance rates, and impute unit costs. Changes to this tab apply to both the <i> TPT Scenario </i> and the <i> Comparator Scenario </i>."),
+    HTML("Some definitions relevant to parameters in the <b> Other Options </b> tab are included below:
+         <ul>
+         <li> <b> PLHIV target population sizes </b>: users can manually specify the number of PLHIV newly enrolled on ART each year that would be eligible for TPT, as well as the number of PLHIV in 2024 that had been enrolled on ART in a previous year, had not yet received TPT, and are eligible for TPT. The number of previously-enrolled PLHIV eligible for TPT in subsequent years is automatically calculated by the model as a function of the number previously enrolled in 2024, the numbers newly enrolled each year, and TPT coverage each year. </li>
+         <li> <b> Household contact target population sizes </b>: users can manually specify the number of TB notifications each year. The number of notifications is combined with country-specific estimates of household size (by age) and user-provided TPT coverage for contacts, to calculate the number of contacts, by age, that receive TPT each year. </li>
+         <li> <b> TPT acceptance and refusal </b>: the tool automatically assumes 73.5% TPT acceptance. That is, 26.5% of eligible individuals offered TPT are assumed to refuse it. Therefore, TPT coverage cannot effectively equal 100% unless this parameter is also set at 100%. </li>
+         <li> <b> TPT drug costs </b>: specify the cost per full course of TPT (drugs only, in US Dollars) for each target population and regimen. There is no need to specify costs for regimens that are not being included in the <i> TPT Scenario </i> you have specified. </li>
+         <li> <b> Other unit costs </b>: specify the cost of other components of TB prevention and treatment (in US Dollars). </li>
+         </ul>"),
+    HTML("The tool assumes that, under the <i> TPT Scenario </i>, active TB disease among contacts < 5 years old is detected via household visit with symptom screening only and confirmatory diagnosis using Chest Xray. For contacts aged 5 years above, active disease is assumed to be detected via household visit with symptom screening and chest Xray, with confirmatory diagnosis via Xpert. All contacts for whom active disease is not detected are assumed to be eligible to initiate TPT.  All contacts for whom active disease is detected incur costs of DS-TB treatment. The <i> Comparator Scenario </i> assumes no TPT and no contact investigation. Under this scenario, household contacts with active disease would only be diagnosed based on country-specific case detection ratios (estimated by the WHO)."),
+    HTML("<br> <br> For PLHIV, the tool assumes that PLHIV on ART with active TB disease would be diagnosed through routine health center visits, and that, under the <i> TPT Scenario </i>, PLHIV not found to have active TB would be eligible for TPT.")
   )
 )
   
