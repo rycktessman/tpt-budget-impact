@@ -1731,7 +1731,7 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
 
 
 regimens <- c("3HP", "1HP", "6H", "None")
-countries <- c("Nigeria", "Zambia")
+countries <- c("Ethiopia", "India", "Nigeria", "South Africa", "Zambia")
 scenarios <- c("TPT Scaleup", "Comparator (no TPT)")
 cost_colors <- data.frame(row.names=c("cost_tx", "cost_art", "cost_contact", 
                                       "cost_3hp", "cost_1hp", 
