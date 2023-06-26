@@ -1015,7 +1015,7 @@ combine_yrs <- function(data, pop_type, policy_end_yr, end_yr) {
 }
 
 #calculate costs - used for PLHIV and contacts
-calc_costs <- function(data, pop_type, costs, cost_impl_input, 
+calc_costs <- function(data, pop_type, costs,  
                        params, disc_fac, start_yr) { #costs=country varying, params=child_params, adol_params, etc.
   if(pop_type %in% c("child", "adol", "adult")) {
     #INITIAL COSTS - FROM CONTACT INVESTIGATION
@@ -1207,7 +1207,7 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
   if(pop_type %in% c("child", "adol", "adult")) {
     data <- data %>% mutate(cost_tx=costs$tb_tx*notif_tb)
   }
-  data <- data %>% mutate(cost_impl=cost_impl_input)
+  data <- data %>% mutate(cost_impl=costs$impl*(initiate_1hp + initiate_3hp + initiate_3hr))
   if(pop_type %in% c("child", "adol", "adult")) {
     data <- data %>% 
       mutate(costs=cost_contact + cost_ipt + cost_3hp + cost_1hp + cost_3hr +
@@ -1494,7 +1494,7 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
                              params$disc_fac, start_yr)
   }
   
-  plhiv_comb <- calc_costs(plhiv_comb, "plhiv", params, 0,
+  plhiv_comb <- calc_costs(plhiv_comb, "plhiv", params, 
                            params, params$disc_fac, start_yr)
   
   #cost-effectiveness code would go here
@@ -1869,15 +1869,6 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
                               start_yr)
   }
   
-  
-  #calculate costs
-  child_comb <- calc_costs(child_comb, "child", child_params, 
-                           0, child_params, child_params$disc_fac, start_yr)
-  adol_comb <- calc_costs(adol_comb, "adol", adol_params, 
-                          0, adol_params, adol_params$disc_fac, start_yr)
-  adult_comb <- calc_costs(adult_comb, "adult", adult_params, 
-                           0, adult_params, adult_params$disc_fac, start_yr)
-  
   child_comb <- child_comb %>% 
     mutate(initiate_ipt=complete_ipt+part_complete_ipt+tox_nohosp_ipt+tox_hosp_ipt,
            initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
@@ -1893,6 +1884,15 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
            initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
            initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp,
            initiate_3hr=complete_3hr+part_complete_3hr+tox_nohosp_3hr+tox_hosp_3hr)
+  
+  #calculate costs
+  child_comb <- calc_costs(child_comb, "child", child_params, 
+                           child_params, child_params$disc_fac, start_yr)
+  adol_comb <- calc_costs(adol_comb, "adol", adol_params, 
+                          adol_params, adol_params$disc_fac, start_yr)
+  adult_comb <- calc_costs(adult_comb, "adult", adult_params, 
+                           adult_params, adult_params$disc_fac, start_yr)
+  
   out <- list("child"=child_comb, "adol"=adol_comb, "adult"=adult_comb)
   return(out)
 }
@@ -1904,12 +1904,13 @@ countries <- c("Ethiopia", "India", "Nigeria", "South Africa", "Zambia")
 scenarios <- c("TPT Scaleup", "Comparator (no TPT)")
 cost_colors <- data.frame(row.names=c("cost_tx", "cost_art", "cost_contact", 
                                       "cost_3hp", "cost_1hp", "cost_3hr",
-                                      "cost_ipt", "cost_tox"),
-                          colors=brewer.pal(n=8, name="Set2"),
+                                      "cost_ipt", "cost_tox", "cost_impl"),
+                          colors=c(brewer.pal(n=8, name="Set2"), brewer.pal(n=12, name="Paired")[[12]]),
                           labels=c("TB treatment", "ART",  "Contact investigation & diagnosis", 
                                    "3HP drugs & clinic visits", "1HP drugs & clinic visits",
                                    "3HR drugs & clinic visits",
-                                   "6H drugs & clinic visits", "TPT toxicity management")
+                                   "6H drugs & clinic visits", "TPT toxicity management",
+                                   "Implementation costs (short-course TPT)")
                           )
 
 #Pt 1: User Interface (UI) - framework (structure for app's appearance)
@@ -3311,8 +3312,12 @@ ui <- navbarPage(
       column(2, numericInput(
         inputId="c_art",
         label="Annual cost of ART & viral load/CD4 testing for PLHIV)",
-        value=94.38))
-  )),
+        value=94.38)),
+      column(2, numericInput(
+        inputId="c_impl",
+        label="Implementation cost (per course of short-course TPT delivered)",
+        value=0)))
+  ),
   tabPanel(
     title="Download Results",
     sidebarLayout(
@@ -4173,6 +4178,7 @@ server <- function(input, output, session) {
     cost_params[["xray"]] <- input$c_xray
     cost_params[["xpert"]] <- input$c_xpert
     cost_params[["outpatient"]] <- input$c_outpatient
+    cost_params[["impl"]] <- input$c_impl
     plhiv_params[["c_art_yr"]] <- input$c_art
     plhiv_params$c_1hp <- input$c_1hp_plhiv
     plhiv_params$c_3hp <- input$c_3hp_plhiv
@@ -4651,6 +4657,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Detailed TB-Related Costs, Scenario with TPT </b>", x=0.1),
@@ -4678,6 +4686,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Detailed TB-Related Costs, Scenario without TPT </b>", x=0.1),
@@ -4707,6 +4717,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Detailed Total Costs, Scenario with TPT </b>", x=0.1),
@@ -4736,6 +4748,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              legend=list(x=1, y=0.5, title=list(text="<b> Cost Categories </b>")),
@@ -4765,6 +4779,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
                 color=I(cost_colors["cost_contact", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Contacts < 5 Costs, Scenario with TPT </b>", x=0.1),
@@ -4794,6 +4810,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
                 color=I(cost_colors["cost_contact", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Contacts < 5 Costs, Scenario without TPT </b>", x=0.1),
@@ -4823,6 +4841,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
                 color=I(cost_colors["cost_contact", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Contacts 5-14 Costs, Scenario with TPT </b>", x=0.1),
@@ -4852,6 +4872,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
                 color=I(cost_colors["cost_contact", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Contacts 5-14 Costs, Scenario without TPT </b>", x=0.1),
@@ -4881,6 +4903,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
                 color=I(cost_colors["cost_contact", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Contacts 15+ Costs, Scenario with TPT </b>", x=0.1),
@@ -4910,6 +4934,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
                 color=I(cost_colors["cost_contact", "colors"])) %>%
+      add_trace(y=~round(cost_impl,-4), name=cost_colors["cost_impl", "labels"], 
+                color=I(cost_colors["cost_impl", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
              xaxis=list(title="Year"),
              title=list(text="<b> Contacts 15+ Costs, Scenario without TPT </b>", x=0.1),
