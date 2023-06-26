@@ -62,33 +62,42 @@ p_plhiv_initiate <- p_hh_child_initiate #doesn't matter for CEA, but just have s
 #TPT completion
 complete_diff_1hp <- 0.1 #assume 10 % pts higher completion on 1HP than 3HP
 complete_diff_ipt <- -0.05 #assume 5 % pts lower completion on IPT than 3HP
+complete_diff_3hr <- 0 #for now
 p_child_complete_3hp <- 0.85 #probability of completing 3HP, conditional on initiating
 p_child_complete_ipt <- p_child_complete_3hp + complete_diff_ipt
 p_child_complete_1hp <- p_child_complete_3hp + complete_diff_1hp
+p_child_complete_3hr <- p_child_complete_3hp + complete_diff_3hr 
 p_adol_complete_3hp <- p_child_complete_3hp
 p_adol_complete_ipt <- p_adol_complete_3hp + complete_diff_ipt
 p_adol_complete_1hp <- p_adol_complete_3hp + complete_diff_1hp
+p_adol_complete_3hr <- p_adol_complete_3hp + complete_diff_3hr 
 p_adult_complete_3hp <- p_child_complete_3hp 
 p_adult_complete_ipt <- p_adult_complete_3hp + complete_diff_ipt
 p_adult_complete_1hp <- p_adult_complete_3hp + complete_diff_1hp
+p_adult_complete_3hr <- p_adult_complete_3hp + complete_diff_3hr 
 p_plhiv_complete_3hp <- p_child_complete_3hp
 p_plhiv_complete_ipt <- p_plhiv_complete_3hp + complete_diff_ipt 
 p_plhiv_complete_1hp <- p_plhiv_complete_3hp + complete_diff_1hp
+p_plhiv_complete_3hr <- p_plhiv_complete_3hp + complete_diff_3hr 
 
 #TPT efficacy
 #set equal across regimens and target population groups
 eff_child_ipt <- 0.87
 eff_child_3hp <- eff_child_ipt
 eff_child_1hp <- eff_child_3hp
+eff_child_3hr <- eff_child_3hp
 eff_adol_ipt <- eff_child_ipt
 eff_adol_3hp <- eff_child_3hp
 eff_adol_1hp <- eff_adol_3hp
+eff_adol_3hr <- eff_adol_3hp
 eff_adult_ipt <- eff_child_ipt
 eff_adult_3hp <- eff_child_3hp
 eff_adult_1hp <- eff_adult_3hp
+eff_adult_3hr <- eff_adult_3hp
 eff_plhiv_ipt <- eff_child_ipt
 eff_plhiv_3hp <- eff_child_3hp
 eff_plhiv_1hp <- eff_plhiv_3hp
+eff_plhiv_3hr <- eff_plhiv_3hp
 
 #hepatotoxicity-related params - children
 p_child_tox_nohosp_ipt <- 0.002 #% experiencing adverse events that don't require hospitalization
@@ -97,6 +106,8 @@ p_child_tox_nohosp_3hp <- 0.015  #% experiencing adverse events that don't requi
 p_child_tox_hosp_3hp <- 0.002 #% initiating TPT that experience hepatotoxicity and require hospitalization
 p_child_tox_nohosp_1hp <- p_child_tox_nohosp_3hp #% experiencing adverse events that don't require hospitalization
 p_child_tox_hosp_1hp <- p_child_tox_hosp_3hp #% initiating TPT that experience hepatotoxicity and require hospitalization
+p_child_tox_nohosp_3hr <- p_child_tox_nohosp_3hp #% experiencing adverse events that don't require hospitalization
+p_child_tox_hosp_3hr <- p_child_tox_hosp_3hp #% initiating TPT that experience hepatotoxicity and require hospitalization
 
 #hepatotoxicity-related params - adolescents
 p_adol_tox_nohosp_ipt <- p_child_tox_nohosp_ipt #% experiencing hepatotoxicity that don't require hospitalization
@@ -105,6 +116,8 @@ p_adol_tox_nohosp_3hp <- p_child_tox_nohosp_3hp #% experiencing hepatotoxicity t
 p_adol_tox_hosp_3hp <- p_child_tox_hosp_3hp #% initiating TPT that experience hepatotoxicity and require hospitalization
 p_adol_tox_nohosp_1hp <- p_child_tox_nohosp_1hp #% experiencing hepatotoxicity that don't require hospitalization
 p_adol_tox_hosp_1hp <- p_child_tox_hosp_1hp #% initiating TPT that experience hepatotoxicity and require hospitalization
+p_adol_tox_nohosp_3hr <- p_child_tox_nohosp_3hr #% experiencing hepatotoxicity that don't require hospitalization
+p_adol_tox_hosp_3hr <- p_child_tox_hosp_3hr #% initiating TPT that experience hepatotoxicity and require hospitalization
 
 #hepatotoxicity-related params - adults
 p_adult_tox_nohosp_ipt <- 0.035 #% experiencing hepatotoxicity that don't require hospitalization
@@ -113,6 +126,8 @@ p_adult_tox_nohosp_3hp <- 0.051 #% experiencing hepatotoxicity that don't requir
 p_adult_tox_hosp_3hp <- 0.005 #% initiating TPT that experience hepatotoxicity and require hospitalization
 p_adult_tox_nohosp_1hp <- p_adult_tox_nohosp_3hp #% experiencing hepatotoxicity that don't require hospitalization
 p_adult_tox_hosp_1hp <- p_adult_tox_hosp_3hp #% initiating TPT that experience hepatotoxicity and require hospitalization
+p_adult_tox_nohosp_3hr <- p_adult_tox_nohosp_3hp  #% experiencing hepatotoxicity that don't require hospitalization
+p_adult_tox_hosp_3hr <- p_adult_tox_hosp_3hp #% initiating TPT that experience hepatotoxicity and require hospitalization
 
 #hepatotoxicity-related params - PLHIV
 p_plhiv_tox_nohosp_ipt <- 0.043 #% of PLHIV initiating TPT that experience hepatotoxicity but don't require hospitalization
@@ -121,6 +136,8 @@ p_plhiv_tox_nohosp_3hp <- p_adult_tox_nohosp_3hp #% of PLHIV initiating TPT that
 p_plhiv_tox_hosp_3hp <- 0.02 #% of PLHIV initiating TPT that require hospitalization due to hepatotoxicity
 p_plhiv_tox_nohosp_1hp <- p_plhiv_tox_nohosp_3hp #% of PLHIV initiating TPT that experience hepatotoxicity but don't require hospitalization
 p_plhiv_tox_hosp_1hp <- p_plhiv_tox_hosp_3hp #% of PLHIV initiating TPT that require hospitalization due to hepatotoxicity
+p_plhiv_tox_nohosp_3hr <- p_plhiv_tox_nohosp_3hp #% of PLHIV initiating TPT that experience hepatotoxicity but don't require hospitalization
+p_plhiv_tox_hosp_3hr <- p_plhiv_tox_hosp_3hp #% of PLHIV initiating TPT that require hospitalization due to hepatotoxicity
 
 #reactivation risk over time - child contacts
 p_child_reactivate_02 <- 0.1 #cumulative 19% probability (within 2 years - e.g. year 0 and year 1) converted to annual probability
@@ -195,6 +212,7 @@ dur_adult_ipt <- dur_child_ipt
 dur_plhiv_ipt <- 6*30 #6 months IPT 
 c_ipt100 <- 0.02 
 c_ipt300 <- 0.04
+c_rif300 <- 19.33/100
 c_child_ipt <- c_ipt100*dur_child_ipt
 c_adol_ipt <- mean(c(c_ipt300, c_ipt100))*dur_adol_ipt
 c_adult_ipt <- c_ipt300*dur_adult_ipt
@@ -207,6 +225,10 @@ c_child_1hp <- 22
 c_adol_1hp <- c_child_1hp
 c_adult_1hp <- c_child_1hp
 c_plhiv_1hp <- c_child_1hp
+c_child_3hr <- (90*c_ipt300 + 90*2*c_rif300)/2
+c_adol_3hr <- 90*c_ipt300 + 90*2*c_rif300
+c_adult_3hr <- c_adol_3hr
+c_plhiv_3hr <- c_adult_3hr
 
 #treatment visits
 n_visit_ipt_contacts <- 6 #6 monitoring visits (initiation=same days as testing visit)
@@ -215,11 +237,14 @@ n_visit_3hp_contacts <- 3 #3 monitoring visits (initiation visit=same day as tes
 n_visit_3hp_plhiv <- 2 #2 monitoring visits (initiation and last monitoring visit occur during quarterly ART visits). 1 in SA
 n_visit_1hp_contacts <- 1 #initial visit after 1-2 weeks
 n_visit_1hp_plhiv <- 1 #initial visit after 1-2 weeks
+n_visit_3hr_contacts <- n_visit_3hp_contacts #since same duration as 3HP
+n_visit_3hr_plhiv <- n_visit_3hp_plhiv #since same duration as 3HP
 
 #TPT delivery costs
 c_delivery_ipt <- 0.1
 c_delivery_3hp <- c_delivery_ipt 
 c_delivery_1hp <- c_delivery_3hp 
+c_delivery_3hr <- c_delivery_3hp
 
 #ART (also include 4 outpatient visits)
 c_delivery_art <- 0.1 #10% customs/insurance/freight/regulatory
@@ -252,12 +277,16 @@ child_params <- list("p_symptom_cxr"=NA, #no CXR screening for children < 5
                      "p_tox_hosp_3hp"=p_child_tox_hosp_3hp,
                      "p_tox_nohosp_1hp"=p_child_tox_nohosp_1hp,
                      "p_tox_hosp_1hp"=p_child_tox_hosp_1hp,
+                     "p_tox_nohosp_3hr"=p_child_tox_nohosp_3hr,
+                     "p_tox_hosp_3hr"=p_child_tox_hosp_3hr,
                      "p_complete_ipt"=p_child_complete_ipt,
                      "p_complete_3hp"=p_child_complete_3hp,
                      "p_complete_1hp"=p_child_complete_1hp,
+                     "p_complete_3hr"=p_child_complete_3hr,
                      "eff_ipt"=eff_child_ipt,
                      "eff_3hp"=eff_child_3hp,
                      "eff_1hp"=eff_child_1hp,
+                     "eff_3hr"=eff_child_3hr,
                      "p_reactivate_02"=p_child_reactivate_02,
                      "p_reactivate_25"=p_child_reactivate_25,
                      "p_reactivate_510"=p_child_reactivate_510,
@@ -270,12 +299,15 @@ child_params <- list("p_symptom_cxr"=NA, #no CXR screening for children < 5
                      "c_ipt"=c_child_ipt,
                      "c_3hp"=c_child_3hp,
                      "c_1hp"=c_child_1hp,
+                     "c_3hr"=c_child_3hr,
                      "c_delivery_ipt"=c_delivery_ipt,
                      "c_delivery_3hp"=c_delivery_3hp,
                      "c_delivery_1hp"=c_delivery_1hp,
+                     "c_delivery_3hr"=c_delivery_3hr,
                      "n_visit_ipt"=n_visit_ipt_contacts,
                      "n_visit_3hp"=n_visit_3hp_contacts,
                      "n_visit_1hp"=n_visit_1hp_contacts,
+                     "n_visit_3hr"=n_visit_3hr_contacts,
                      "nday_hosp_tox"=nday_hosp_tox)
 
 adol_params <- list("p_symptom_cxr"=p_hh_adol_symptom_cxr,
@@ -295,12 +327,16 @@ adol_params <- list("p_symptom_cxr"=p_hh_adol_symptom_cxr,
                     "p_tox_hosp_3hp"=p_adol_tox_hosp_3hp,
                     "p_tox_nohosp_1hp"=p_adol_tox_nohosp_1hp,
                     "p_tox_hosp_1hp"=p_adol_tox_hosp_1hp,
+                    "p_tox_nohosp_3hr"=p_adol_tox_nohosp_3hr,
+                    "p_tox_hosp_3hr"=p_adol_tox_hosp_3hr,
                     "p_complete_ipt"=p_adol_complete_ipt,
                     "p_complete_3hp"=p_adol_complete_3hp,
                     "p_complete_1hp"=p_adol_complete_1hp,
+                    "p_complete_3hr"=p_adol_complete_3hr,
                     "eff_ipt"=eff_adol_ipt,
                     "eff_3hp"=eff_adol_3hp,
                     "eff_1hp"=eff_adol_1hp,
+                    "eff_3hr"=eff_adol_3hr,
                     "p_reactivate_02"=p_adol_reactivate_02,
                     "p_reactivate_25"=p_adol_reactivate_25,
                     "p_reactivate_510"=p_adol_reactivate_510,
@@ -313,12 +349,15 @@ adol_params <- list("p_symptom_cxr"=p_hh_adol_symptom_cxr,
                     "c_ipt"=c_adol_ipt,
                     "c_3hp"=c_adol_3hp,
                     "c_1hp"=c_adol_1hp,
+                    "c_3hr"=c_adol_3hr,
                     "c_delivery_ipt"=c_delivery_ipt,
                     "c_delivery_3hp"=c_delivery_3hp,
                     "c_delivery_1hp"=c_delivery_1hp,
+                    "c_delivery_3hr"=c_delivery_3hr,
                     "n_visit_ipt"=n_visit_ipt_contacts,
                     "n_visit_3hp"=n_visit_3hp_contacts,
                     "n_visit_1hp"=n_visit_1hp_contacts,
+                    "n_visit_3hr"=n_visit_3hr_contacts,
                     "nday_hosp_tox"=nday_hosp_tox)
 
 adult_params <- list("p_symptom_cxr"=p_hh_adult_symptom_cxr,
@@ -338,12 +377,16 @@ adult_params <- list("p_symptom_cxr"=p_hh_adult_symptom_cxr,
                      "p_tox_hosp_3hp"=p_adult_tox_hosp_3hp,
                      "p_tox_nohosp_1hp"=p_adult_tox_nohosp_1hp,
                      "p_tox_hosp_1hp"=p_adult_tox_hosp_1hp,
+                     "p_tox_nohosp_3hr"=p_adult_tox_nohosp_3hr,
+                     "p_tox_hosp_3hr"=p_adult_tox_hosp_3hr,
                      "p_complete_ipt"=p_adult_complete_ipt,
                      "p_complete_3hp"=p_adult_complete_3hp,
                      "p_complete_1hp"=p_adult_complete_1hp,
+                     "p_complete_3hr"=p_adult_complete_3hr,
                      "eff_ipt"=eff_adult_ipt,
                      "eff_3hp"=eff_adult_3hp,
                      "eff_1hp"=eff_adult_1hp,
+                     "eff_3hr"=eff_adult_3hr,
                      "p_reactivate_02"=p_adult_reactivate_02,
                      "p_reactivate_25"=p_adult_reactivate_25,
                      "p_reactivate_510"=p_adult_reactivate_510,
@@ -356,12 +399,15 @@ adult_params <- list("p_symptom_cxr"=p_hh_adult_symptom_cxr,
                      "c_ipt"=c_adult_ipt,
                      "c_3hp"=c_adult_3hp,
                      "c_1hp"=c_adult_1hp,
+                     "c_3hr"=c_adult_3hr,
                      "c_delivery_ipt"=c_delivery_ipt,
                      "c_delivery_3hp"=c_delivery_3hp,
                      "c_delivery_1hp"=c_delivery_1hp,
+                     "c_delivery_3hr"=c_delivery_3hr,
                      "n_visit_ipt"=n_visit_ipt_contacts,
                      "n_visit_3hp"=n_visit_3hp_contacts,
                      "n_visit_1hp"=n_visit_1hp_contacts,
+                     "n_visit_3hr"=n_visit_3hr_contacts,
                      "nday_hosp_tox"=nday_hosp_tox)
 
 plhiv_params <- list("p_tox_nohosp_ipt"=p_plhiv_tox_nohosp_ipt,
@@ -370,13 +416,17 @@ plhiv_params <- list("p_tox_nohosp_ipt"=p_plhiv_tox_nohosp_ipt,
                      "p_tox_hosp_3hp"=p_plhiv_tox_hosp_3hp,
                      "p_tox_nohosp_1hp"=p_plhiv_tox_nohosp_1hp,
                      "p_tox_hosp_1hp"=p_plhiv_tox_hosp_1hp,
+                     "p_tox_nohosp_3hr"=p_plhiv_tox_nohosp_3hr,
+                     "p_tox_hosp_3hr"=p_plhiv_tox_hosp_3hr,
                      "p_initiate"=p_plhiv_initiate,
                      "p_complete_ipt"=p_plhiv_complete_ipt,
                      "p_complete_3hp"=p_plhiv_complete_3hp,
                      "p_complete_1hp"=p_plhiv_complete_1hp,
+                     "p_complete_3hr"=p_plhiv_complete_3hr,
                      "eff_ipt"=eff_plhiv_ipt,
                      "eff_3hp"=eff_plhiv_3hp,
                      "eff_1hp"=eff_plhiv_1hp,
+                     "eff_3hr"=eff_plhiv_3hr,
                      "p_reactivate_new_yr1"=p_plhiv_reactivate_new01,
                      "p_reactivate_new_yr2"=p_plhiv_reactivate_new12,
                      "p_reactivate_est_yr1"=p_plhiv_reactivate_est01,
@@ -403,12 +453,15 @@ plhiv_params <- list("p_tox_nohosp_ipt"=p_plhiv_tox_nohosp_ipt,
                      "c_ipt"=c_plhiv_ipt,
                      "c_3hp"=c_plhiv_3hp,
                      "c_1hp"=c_plhiv_1hp,
+                     "c_3hr"=c_plhiv_3hr,
                      "c_delivery_ipt"=c_delivery_ipt,
                      "c_delivery_3hp"=c_delivery_3hp,
                      "c_delivery_1hp"=c_delivery_1hp,
+                     "c_delivery_3hr"=c_delivery_3hr,
                      "n_visit_ipt"=n_visit_ipt_plhiv,
                      "n_visit_3hp"=n_visit_3hp_plhiv,
                      "n_visit_1hp"=n_visit_1hp_plhiv,
+                     "n_visit_3hr"=n_visit_3hr_plhiv,
                      "c_art_yr"=c_art_yr,
                      "n_visit_art"=n_visit_art,
                      "nday_hosp_tox"=nday_hosp_tox)

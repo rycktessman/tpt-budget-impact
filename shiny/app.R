@@ -30,64 +30,79 @@ model_tb_new_plhiv <- function(d_covg, params) {
   initiate_ipt_new <- (ltbi_new + no_tb_new)*d_covg$initiate_ipt_covg_new
   initiate_3hp_new <- (ltbi_new + no_tb_new)*d_covg$initiate_3hp_covg_new
   initiate_1hp_new <- (ltbi_new + no_tb_new)*d_covg$initiate_1hp_covg_new
+  initiate_3hr_new <- (ltbi_new + no_tb_new)*d_covg$initiate_3hr_covg_new
   initiate_ipt_ltbi_new <- ltbi_new*d_covg$initiate_ipt_covg_new
   initiate_3hp_ltbi_new <- ltbi_new*d_covg$initiate_3hp_covg_new
   initiate_1hp_ltbi_new <- ltbi_new*d_covg$initiate_1hp_covg_new
+  initiate_3hr_ltbi_new <- ltbi_new*d_covg$initiate_3hr_covg_new
   tox_nohosp_ipt_new <- initiate_ipt_new*params$p_tox_nohosp_ipt
   tox_nohosp_3hp_new <- initiate_3hp_new*params$p_tox_nohosp_3hp
   tox_nohosp_1hp_new <- initiate_1hp_new*params$p_tox_nohosp_1hp
+  tox_nohosp_3hr_new <- initiate_3hr_new*params$p_tox_nohosp_3hr
   tox_hosp_ipt_new <- initiate_ipt_new*params$p_tox_hosp_ipt
   tox_hosp_3hp_new <- initiate_3hp_new*params$p_tox_hosp_3hp
   tox_hosp_1hp_new <- initiate_1hp_new*params$p_tox_hosp_1hp
+  tox_hosp_3hr_new <- initiate_3hr_new*params$p_tox_hosp_3hr
   complete_ipt_new <- initiate_ipt_new*params$p_complete_ipt*(1-(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt))
   complete_3hp_new <- initiate_3hp_new*params$p_complete_3hp*(1-(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp))
   complete_1hp_new <- initiate_1hp_new*params$p_complete_1hp*(1-(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
+  complete_3hr_new <- initiate_3hr_new*params$p_complete_3hr*(1-(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
   part_complete_ipt_new <- initiate_ipt_new - 
     (complete_ipt_new + tox_nohosp_ipt_new + tox_hosp_ipt_new)
   part_complete_3hp_new <- initiate_3hp_new - 
     (complete_3hp_new + tox_nohosp_3hp_new + tox_hosp_3hp_new)
   part_complete_1hp_new <- initiate_1hp_new - 
     (complete_1hp_new + tox_nohosp_1hp_new + tox_hosp_1hp_new)
+  part_complete_3hr_new <- initiate_3hr_new - 
+    (complete_3hr_new + tox_nohosp_3hr_new + tox_hosp_3hr_new)
   
   #results of TPT/lack of TPT on TB status for newly enrolled
   ltbi_new_tpt <- initiate_ipt_ltbi_new + #LTBI and IPT initiated 
     initiate_3hp_ltbi_new +
-    initiate_1hp_ltbi_new -
+    initiate_1hp_ltbi_new +
+    initiate_3hr_ltbi_new -
     initiate_ipt_ltbi_new*params$p_complete_ipt*params$eff_ipt - #subtract out full IPT completion/efficacy
     initiate_3hp_ltbi_new*params$p_complete_3hp*params$eff_3hp - #subtract out full 3HP completion/efficacy
     initiate_1hp_ltbi_new*params$p_complete_1hp*params$eff_1hp - #subtract out full 1HP completion/efficacy
+    initiate_3hr_ltbi_new*params$p_complete_3hr*params$eff_3hr - #subtract out full 3hr completion/efficacy
     initiate_ipt_ltbi_new*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-
                              params$p_tox_nohosp_ipt)*params$eff_ipt/2 - #subtract out IPT partial completion/efficacy
     initiate_3hp_ltbi_new*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-
                              params$p_tox_nohosp_3hp)*params$eff_3hp/2 - #subtract out 3HP partial completion/efficacy
     initiate_1hp_ltbi_new*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-
-                             params$p_tox_nohosp_1hp)*params$eff_1hp/2 #subtract out 1HP partial completion/efficacy
-  ltbi_new_not <- ltbi_new - initiate_ipt_ltbi_new - initiate_3hp_ltbi_new - initiate_1hp_ltbi_new #LTBI and didn't initiate TPT
-  no_tb_new_tpt <- initiate_ipt_new + initiate_3hp_new + initiate_1hp_new -
-    (initiate_ipt_ltbi_new + initiate_3hp_ltbi_new + initiate_1hp_ltbi_new) + #no LTBI to begin with
+                             params$p_tox_nohosp_1hp)*params$eff_1hp/2 - #subtract out 1HP partial completion/efficacy
+    initiate_3hr_ltbi_new*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-
+                             params$p_tox_nohosp_3hr)*params$eff_3hr/2 #subtract out 3hr partial completion/efficacy
+  ltbi_new_not <- ltbi_new - initiate_ipt_ltbi_new - initiate_3hp_ltbi_new - 
+    initiate_1hp_ltbi_new - initiate_3hr_ltbi_new #LTBI and didn't initiate TPT
+  no_tb_new_tpt <- initiate_ipt_new + initiate_3hp_new + initiate_1hp_new + initiate_3hr_new -
+    (initiate_ipt_ltbi_new + initiate_3hp_ltbi_new + initiate_1hp_ltbi_new + initiate_3hr_ltbi_new) + #no LTBI to begin with
     initiate_ipt_ltbi_new*params$p_complete_ipt*params$eff_ipt + #full IPT completion
     initiate_3hp_ltbi_new*params$p_complete_3hp*params$eff_3hp + #full 3HP completion
     initiate_1hp_ltbi_new*params$p_complete_1hp*params$eff_1hp + #full 1HP completion
+    initiate_3hr_ltbi_new*params$p_complete_3hr*params$eff_3hr + #full 3hr completion
     initiate_ipt_ltbi_new*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-params$p_tox_nohosp_ipt)*
     params$eff_ipt/2 + #partial IPT completion
     initiate_3hp_ltbi_new*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-params$p_tox_nohosp_3hp)*
     params$eff_3hp/2 + #partial 3HP completion
     initiate_1hp_ltbi_new*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-params$p_tox_nohosp_1hp)*
-    params$eff_1hp/2 #partial 1HP completion
+    params$eff_1hp/2 + #partial 1HP completion
+    initiate_3hr_ltbi_new*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-params$p_tox_nohosp_3hr)*
+    params$eff_3hr/2 #partial 3hr completion
   no_tb_new_not <- no_tb_new*
     (1-(d_covg$initiate_ipt_covg_new + d_covg$initiate_3hp_covg_new +
-          d_covg$initiate_1hp_covg_new)) #no LTBI to begin with
+          d_covg$initiate_1hp_covg_new + d_covg$initiate_3hr_covg_new)) #no LTBI to begin with
   #track no TPT that got TB separately (wouldn't be eligible for TPT)
   no_tb_new_not_tb <- active_tb_new*params$p_notif*params$p_success
   active_tb_new_tpt <- 0 #assume no PWH are wrongly assigned to TPT
   active_tb_new_not <- active_tb_new*(1-params$p_notif) + active_tb_new*params$p_notif*(1-params$p_success)
   
   data <- data.frame(cases_new, notif_new, tb_deaths_enroll, 
-                     initiate_ipt_new, initiate_3hp_new, initiate_1hp_new,
-                     tox_nohosp_ipt_new, tox_nohosp_3hp_new, tox_nohosp_1hp_new,
-                     tox_hosp_ipt_new, tox_hosp_3hp_new, tox_hosp_1hp_new,
-                     complete_ipt_new, complete_3hp_new, complete_1hp_new,
-                     part_complete_ipt_new, part_complete_3hp_new, part_complete_1hp_new,
+                     initiate_ipt_new, initiate_3hp_new, initiate_1hp_new, initiate_3hr_new,
+                     tox_nohosp_ipt_new, tox_nohosp_3hp_new, tox_nohosp_1hp_new, tox_nohosp_3hr_new,
+                     tox_hosp_ipt_new, tox_hosp_3hp_new, tox_hosp_1hp_new, tox_hosp_3hr_new,
+                     complete_ipt_new, complete_3hp_new, complete_1hp_new, complete_3hr_new,
+                     part_complete_ipt_new, part_complete_3hp_new, part_complete_1hp_new, part_complete_3hr_new,
                      ltbi_new_tpt, ltbi_new_not, 
                      active_tb_new_tpt, active_tb_new_not,
                      no_tb_new_tpt, no_tb_new_not, no_tb_new_not_tb)
@@ -170,55 +185,73 @@ model_outcomes_est_plhiv <- function(d, d_ltbi, params) {
   d <- d %>% mutate(initiate_ipt_est=(ltbi_est_not + no_tb_est_not)*initiate_ipt_covg_prev,
                     initiate_3hp_est=(ltbi_est_not + no_tb_est_not)*initiate_3hp_covg_prev,
                     initiate_1hp_est=(ltbi_est_not + no_tb_est_not)*initiate_1hp_covg_prev,
+                    initiate_3hr_est=(ltbi_est_not + no_tb_est_not)*initiate_3hr_covg_prev,
                     initiate_ipt_ltbi_est=ltbi_est_not*initiate_ipt_covg_prev,
                     initiate_3hp_ltbi_est=ltbi_est_not*initiate_3hp_covg_prev,
                     initiate_1hp_ltbi_est=ltbi_est_not*initiate_1hp_covg_prev,
+                    initiate_3hr_ltbi_est=ltbi_est_not*initiate_3hr_covg_prev,
                     tox_nohosp_ipt_est=initiate_ipt_est*params$p_tox_nohosp_ipt,
                     tox_nohosp_3hp_est=initiate_3hp_est*params$p_tox_nohosp_3hp,
                     tox_nohosp_1hp_est=initiate_1hp_est*params$p_tox_nohosp_1hp,
+                    tox_nohosp_3hr_est=initiate_3hr_est*params$p_tox_nohosp_3hr,
                     tox_hosp_ipt_est=initiate_ipt_est*params$p_tox_hosp_ipt,
                     tox_hosp_3hp_est=initiate_3hp_est*params$p_tox_hosp_3hp,
                     tox_hosp_1hp_est=initiate_1hp_est*params$p_tox_hosp_1hp,
+                    tox_hosp_3hr_est=initiate_3hr_est*params$p_tox_hosp_3hr,
                     complete_ipt_est=initiate_ipt_est*params$p_complete_ipt*
                       (1-(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt)),
                     complete_3hp_est=initiate_3hp_est*params$p_complete_3hp*
                       (1-(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp)),
                     complete_1hp_est=initiate_1hp_est*params$p_complete_1hp*
                       (1-(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp)),
+                    complete_3hr_est=initiate_3hr_est*params$p_complete_3hr*
+                      (1-(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr)),
                     part_complete_ipt_est=initiate_ipt_est - 
                       (complete_ipt_est + tox_nohosp_ipt_est + tox_hosp_ipt_est),
                     part_complete_3hp_est=initiate_3hp_est - 
                       (complete_3hp_est + tox_nohosp_3hp_est + tox_hosp_3hp_est),
                     part_complete_1hp_est=initiate_1hp_est - 
-                      (complete_1hp_est + tox_nohosp_1hp_est + tox_hosp_1hp_est))
+                      (complete_1hp_est + tox_nohosp_1hp_est + tox_hosp_1hp_est),
+                    part_complete_3hr_est=initiate_3hr_est - 
+                      (complete_3hr_est + tox_nohosp_3hr_est + tox_hosp_3hr_est))
   
   #results of TPT/lack of TPT on TB status of previously enrolled
   d <- d %>% mutate(ltbi_est_tpt=initiate_ipt_ltbi_est + #LTBI and IPT initiated 
                       initiate_3hp_ltbi_est +
-                      initiate_1hp_ltbi_est -
+                      initiate_1hp_ltbi_est +
+                      initiate_3hr_ltbi_est -
                       initiate_ipt_ltbi_est*params$p_complete_ipt*params$eff_ipt - #subtract out full IPT completion/efficacy
                       initiate_3hp_ltbi_est*params$p_complete_3hp*params$eff_3hp - #subtract out full 3HP completion/efficacy
                       initiate_1hp_ltbi_est*params$p_complete_1hp*params$eff_1hp - #subtract out full 1HP completion/efficacy
+                      initiate_3hr_ltbi_est*params$p_complete_3hr*params$eff_3hr - #subtract out full 3hr completion/efficacy
                       initiate_ipt_ltbi_est*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-
                                                params$p_tox_nohosp_ipt)*params$eff_ipt/2 - #subtract out IPT partial completion/efficacy
                       initiate_3hp_ltbi_est*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-
                                                params$p_tox_nohosp_3hp)*params$eff_3hp/2 - #subtract out 3HP partial completion/efficacy
                       initiate_1hp_ltbi_est*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-
-                                               params$p_tox_nohosp_1hp)*params$eff_1hp/2, #subtract out 1HP partial completion/efficacy
+                                               params$p_tox_nohosp_1hp)*params$eff_1hp/2 - #subtract out 1HP partial completion/efficacy
+                      initiate_3hr_ltbi_est*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-
+                                               params$p_tox_nohosp_3hr)*params$eff_3hr/2,  #subtract out 3hr partial completion/efficacy
                     ltbi_est_not=ltbi_est_not - initiate_ipt_ltbi_est - 
-                      initiate_3hp_ltbi_est - initiate_1hp_ltbi_est, #LTBI and didn't initiate TPT
-                    no_tb_est_tpt=initiate_ipt_est + initiate_3hp_est + initiate_1hp_est -
-                      (initiate_ipt_ltbi_est + initiate_3hp_ltbi_est + initiate_1hp_ltbi_est) + #no LTBI to begin with
+                      initiate_3hp_ltbi_est - initiate_1hp_ltbi_est - initiate_3hr_ltbi_est, #LTBI and didn't initiate TPT
+                    no_tb_est_tpt=initiate_ipt_est + initiate_3hp_est + 
+                      initiate_1hp_est + initiate_3hr_est -
+                      (initiate_ipt_ltbi_est + initiate_3hp_ltbi_est + 
+                         initiate_1hp_ltbi_est + initiate_3hr_ltbi_est) + #no LTBI to begin with
                       initiate_ipt_ltbi_est*params$p_complete_ipt*params$eff_ipt + #full IPT completion
                       initiate_3hp_ltbi_est*params$p_complete_3hp*params$eff_3hp + #full 3HP completion
                       initiate_1hp_ltbi_est*params$p_complete_1hp*params$eff_1hp + #full 1HP completion
+                      initiate_3hr_ltbi_est*params$p_complete_3hr*params$eff_3hr + #full 3hr completion
                       initiate_ipt_ltbi_est*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-params$p_tox_nohosp_ipt)*
                       params$eff_ipt/2 + #partial IPT completion
                       initiate_3hp_ltbi_est*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-params$p_tox_nohosp_3hp)*
                       params$eff_3hp/2 + #partial 3HP completion
                       initiate_1hp_ltbi_est*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-params$p_tox_nohosp_1hp)*
-                      params$eff_1hp/2, #partial 1HP completion
-                    no_tb_est_not=no_tb_est_not*(1-(initiate_ipt_covg_prev + initiate_3hp_covg_prev + initiate_1hp_covg_prev)), #no LTBI to begin with
+                      params$eff_1hp/2 + #partial 1HP completion
+                      initiate_3hr_ltbi_est*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-params$p_tox_nohosp_3hr)*
+                      params$eff_3hr/2, #partial 3hr completion
+                    no_tb_est_not=no_tb_est_not*(1-(initiate_ipt_covg_prev + initiate_3hp_covg_prev + 
+                                                      initiate_1hp_covg_prev + initiate_3hr_covg_prev)), #no LTBI to begin with
                     #track no TPT that got TB separately (wouldn't be eligible for TPT later)
                     no_tb_est_not_tb=active_tb_est_not*params$p_notif*params$p_success,
                     active_tb_est_tpt=0,
@@ -242,11 +275,11 @@ model_outcomes_est_plhiv <- function(d, d_ltbi, params) {
                     active_tb_est_not=active_tb_est_not-active_tb_ltfu_not)
   
   d <- d %>% select(cases_est, notif_est, tb_deaths_enroll, 
-                    initiate_ipt_est, initiate_3hp_est, initiate_1hp_est,
-                    tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est,
-                    tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est,
-                    complete_ipt_est, complete_3hp_est, complete_1hp_est,
-                    part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est,
+                    initiate_ipt_est, initiate_3hp_est, initiate_1hp_est, initiate_3hr_est,
+                    tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est, tox_nohosp_3hr_est,
+                    tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est, tox_hosp_3hr_est,
+                    complete_ipt_est, complete_3hp_est, complete_1hp_est, complete_3hr_est,
+                    part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est, part_complete_3hr_est,
                     ltbi_est_tpt, ltbi_est_not, 
                     active_tb_est_tpt, active_tb_est_not,
                     no_tb_est_tpt, no_tb_est_not, no_tb_est_not_tb,
@@ -598,66 +631,83 @@ model_tb_plhiv <- function(d, d_ltbi, d_covg, d_ltbi_covg, params) {
   initiate_ipt_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_ipt_covg_prev #previously enrolled(prev)=established (est)
   initiate_3hp_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_3hp_covg_prev
   initiate_1hp_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_1hp_covg_prev
+  initiate_3hr_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_3hr_covg_prev
   initiate_ipt_ltbi_est <- ltbi_est_not*d_covg$initiate_ipt_covg_prev #keep matrix format for LTBI
   initiate_3hp_ltbi_est <- ltbi_est_not*d_covg$initiate_3hp_covg_prev
   initiate_1hp_ltbi_est <- ltbi_est_not*d_covg$initiate_1hp_covg_prev
+  initiate_3hr_ltbi_est <- ltbi_est_not*d_covg$initiate_3hr_covg_prev
   tox_nohosp_ipt_est <- initiate_ipt_est*params$p_tox_nohosp_ipt
   tox_nohosp_3hp_est <- initiate_3hp_est*params$p_tox_nohosp_3hp
   tox_nohosp_1hp_est <- initiate_1hp_est*params$p_tox_nohosp_1hp
+  tox_nohosp_3hr_est <- initiate_3hr_est*params$p_tox_nohosp_3hr
   tox_hosp_ipt_est <- initiate_ipt_est*params$p_tox_hosp_ipt
   tox_hosp_3hp_est <- initiate_3hp_est*params$p_tox_hosp_3hp
   tox_hosp_1hp_est <- initiate_1hp_est*params$p_tox_hosp_1hp
+  tox_hosp_3hr_est <- initiate_3hr_est*params$p_tox_hosp_3hr
   complete_ipt_est <- initiate_ipt_est*params$p_complete_ipt*(1-(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt))
   complete_3hp_est <- initiate_3hp_est*params$p_complete_3hp*(1-(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp))
   complete_1hp_est <- initiate_1hp_est*params$p_complete_1hp*(1-(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
+  complete_3hr_est <- initiate_3hr_est*params$p_complete_3hr*(1-(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
   part_complete_ipt_est <- initiate_ipt_est - 
     (complete_ipt_est + tox_nohosp_ipt_est + tox_hosp_ipt_est)
   part_complete_3hp_est <- initiate_3hp_est - 
     (complete_3hp_est + tox_nohosp_3hp_est + tox_hosp_3hp_est)
   part_complete_1hp_est <- initiate_1hp_est - 
     (complete_1hp_est + tox_nohosp_1hp_est + tox_hosp_1hp_est)
+  part_complete_3hr_est <- initiate_3hr_est - 
+    (complete_3hr_est + tox_nohosp_3hr_est + tox_hosp_3hr_est)
   complete_ipt_ltbi_est <- initiate_ipt_ltbi_est*params$p_complete_ipt #keep matrix format
   complete_3hp_ltbi_est <- initiate_3hp_ltbi_est*params$p_complete_3hp
   complete_1hp_ltbi_est <- initiate_1hp_ltbi_est*params$p_complete_1hp
+  complete_3hr_ltbi_est <- initiate_3hr_ltbi_est*params$p_complete_3hr
   part_complete_ipt_ltbi_est <- initiate_ipt_ltbi_est*
     (1-(params$p_complete_ipt + params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt))
   part_complete_3hp_ltbi_est <- initiate_3hp_ltbi_est*
     (1-(params$p_complete_3hp + params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp))
   part_complete_1hp_ltbi_est <- initiate_1hp_ltbi_est*
     (1-(params$p_complete_1hp + params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
+  part_complete_3hr_ltbi_est <- initiate_3hr_ltbi_est*
+    (1-(params$p_complete_3hr + params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
   
   #calculate results of TPT provision on TB status and TPT status
   #those that initiate are no longer eligible for TPT again, regardless of completion
   ltbi_est_not <- ltbi_est_not - 
-    (initiate_ipt_ltbi_est + initiate_3hp_ltbi_est + initiate_1hp_ltbi_est)
+    (initiate_ipt_ltbi_est + initiate_3hp_ltbi_est + initiate_1hp_ltbi_est + initiate_3hr_ltbi_est)
   no_tb_est_not <- no_tb_est_not - 
     (initiate_ipt_est - rowSums(initiate_ipt_ltbi_est)) -
     (initiate_3hp_est - rowSums(initiate_3hp_ltbi_est)) -
-    (initiate_1hp_est - rowSums(initiate_1hp_ltbi_est))
+    (initiate_1hp_est - rowSums(initiate_1hp_ltbi_est)) -
+    (initiate_3hr_est - rowSums(initiate_3hr_ltbi_est))
   #full completion of those with LTBI
   ltbi_est_tpt <- ltbi_est_tpt + complete_ipt_ltbi_est*(1-params$eff_ipt) +
     complete_3hp_ltbi_est*(1-params$eff_3hp) +
-    complete_1hp_ltbi_est*(1-params$eff_1hp)
+    complete_1hp_ltbi_est*(1-params$eff_1hp) +
+    complete_3hr_ltbi_est*(1-params$eff_3hr)
   no_tb_est_tpt <- no_tb_est_tpt + rowSums(complete_ipt_ltbi_est)*params$eff_ipt +
     rowSums(complete_3hp_ltbi_est)*params$eff_3hp +
-    rowSums(complete_1hp_ltbi_est)*params$eff_1hp
+    rowSums(complete_1hp_ltbi_est)*params$eff_1hp +
+    rowSums(complete_3hr_ltbi_est)*params$eff_3hr
   #partial completion of those with LTBI
   ltbi_est_tpt <- ltbi_est_tpt + part_complete_ipt_ltbi_est*(1-params$eff_ipt/2) +
     part_complete_3hp_ltbi_est*(1-params$eff_3hp/2) +
-    part_complete_1hp_ltbi_est*(1-params$eff_1hp/2)
+    part_complete_1hp_ltbi_est*(1-params$eff_1hp/2) +
+    part_complete_3hr_ltbi_est*(1-params$eff_3hr/2)
   no_tb_est_tpt <- no_tb_est_tpt + rowSums(part_complete_ipt_ltbi_est)*params$eff_ipt/2 +
     rowSums(part_complete_3hp_ltbi_est)*params$eff_3hp/2 +
-    rowSums(part_complete_1hp_ltbi_est)*params$eff_1hp/2
+    rowSums(part_complete_1hp_ltbi_est)*params$eff_1hp/2 +
+    rowSums(part_complete_3hr_ltbi_est)*params$eff_3hr/2
   #no completion if those with LTBI - toxicity - no efficacy so only flows to ltbi_est_tpt
   ltbi_est_tpt <- ltbi_est_tpt + 
     initiate_ipt_ltbi_est*(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt) +
     initiate_3hp_ltbi_est*(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp) +
-    initiate_1hp_ltbi_est*(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp)
+    initiate_1hp_ltbi_est*(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp) +
+    initiate_3hr_ltbi_est*(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr)
   #those that initiate and didn't have LTBI go to no_tb_est_tpt regardless of completion status
   no_tb_est_tpt <- no_tb_est_tpt + 
     (initiate_ipt_est - rowSums(initiate_ipt_ltbi_est)) +
     (initiate_3hp_est - rowSums(initiate_3hp_ltbi_est)) +
-    (initiate_1hp_est - rowSums(initiate_1hp_ltbi_est))
+    (initiate_1hp_est - rowSums(initiate_1hp_ltbi_est)) +
+    (initiate_3hr_est - rowSums(initiate_3hr_ltbi_est))
   
   #add back to data and take only variables we need to track for next round
   #LTBI matrices are in a separate list
@@ -666,11 +716,11 @@ model_tb_plhiv <- function(d, d_ltbi, d_covg, d_ltbi_covg, params) {
                          cases_est, notif_est,
                          cases_ltfu, notif_ltfu,
                          #TPT outcomes (to calculate costs)
-                         initiate_ipt_est, initiate_3hp_est, initiate_1hp_est,
-                         tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est,
-                         tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est,
-                         complete_ipt_est, complete_3hp_est, complete_1hp_est,
-                         part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est,
+                         initiate_ipt_est, initiate_3hp_est, initiate_1hp_est, initiate_3hr_est,
+                         tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est, tox_nohosp_3hr_est,
+                         tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est, tox_hosp_3hr_est,
+                         complete_ipt_est, complete_3hp_est, complete_1hp_est, complete_3hr_est,
+                         part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est, part_complete_3hr_est,
                          #TB-TPT status (for next timestep)
                          active_tb_est_tpt, active_tb_est_not,
                          no_tb_est_tpt, no_tb_est_not, no_tb_est_not_tb, 
@@ -690,11 +740,11 @@ model_tb_plhiv <- function(d, d_ltbi, d_covg, d_ltbi_covg, params) {
                                  cases_est, notif_est,
                                  cases_ltfu, notif_ltfu,
                                  #TPT outcomes (to calculate costs)
-                                 initiate_ipt_est, initiate_3hp_est, initiate_1hp_est,
-                                 tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est,
-                                 tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est,
-                                 complete_ipt_est, complete_3hp_est, complete_1hp_est,
-                                 part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est,
+                                 initiate_ipt_est, initiate_3hp_est, initiate_1hp_est, initiate_3hp_est,
+                                 tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est, tox_nohosp_3hr_est,
+                                 tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est, tox_hosp_3hr_est,
+                                 complete_ipt_est, complete_3hp_est, complete_1hp_est, complete_3hr_est,
+                                 part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est, part_complete_3hr_est,
                                  #TB-TPT status (for next timestep)
                                  active_tb_est_tpt, active_tb_est_not,
                                  no_tb_est_tpt, no_tb_est_not, no_tb_est_not_tb,
@@ -729,9 +779,12 @@ calc_contact_invest <- function(data, params) {
              p_initiate*prop_3hp,
            initiate_1hp = (contact_invest_tb_fn + contact_invest_tb_tn)*
              p_initiate*prop_1hp,
+           initiate_3hr = (contact_invest_tb_fn + contact_invest_tb_tn)*
+             p_initiate*prop_3hr,
            initiate_ipt_ltbi = contact_invest_tb_tn*prop_ipt*p_initiate*params$p_ltbi/(1-params$p_tb),
            initiate_3hp_ltbi = contact_invest_tb_tn*prop_3hp*p_initiate*params$p_ltbi/(1-params$p_tb),
            initiate_1hp_ltbi = contact_invest_tb_tn*prop_1hp*p_initiate*params$p_ltbi/(1-params$p_tb),
+           initiate_3hr_ltbi = contact_invest_tb_tn*prop_3hr*p_initiate*params$p_ltbi/(1-params$p_tb),
            #in scenarios w/ no CXR screening, need to add an additional initiation visit for subclinical that start TPT
            #in scenarios w/ CXR screening, the CXR visit is the initiation visit
            initiate_ipt_negscreen = ((contact_invest_num - contact_invest_screen)*(1-params$p_negscreen_tb) + #TNs w/neg screen
@@ -742,7 +795,10 @@ calc_contact_invest <- function(data, params) {
              p_initiate*prop_3hp, #multiply by initiation and % that get 3HP.
            initiate_1hp_negscreen = ((contact_invest_num - contact_invest_screen)*(1-params$p_negscreen_tb) + #TNs w/neg screen
                                        contact_invest_tb*(1-params$p_tb_screen))* #FNs (all TB cases w/neg screen)
-             p_initiate*prop_1hp, #multiply by initiation and % that get 1HP.                    
+             p_initiate*prop_1hp, #multiply by initiation and % that get 1HP.   
+           initiate_3hr_negscreen = ((contact_invest_num - contact_invest_screen)*(1-params$p_negscreen_tb) + #TNs w/neg screen
+                                       contact_invest_tb*(1-params$p_tb_screen))* #FNs (all TB cases w/neg screen)
+             p_initiate*prop_3hr, #multiply by initiation and % that get 3hr.    
            #also calculate those w/ active and latent TB that weren't investigated
            no_contact_tb = (total - contact_invest_num)*params$p_tb,
            no_contact_ltbi = (total - contact_invest_num)*params$p_ltbi,
@@ -755,30 +811,38 @@ calc_tpt_outcomes_contacts <- function(data, params) {
     mutate(tox_nohosp_ipt=initiate_ipt*params$p_tox_nohosp_ipt,
            tox_nohosp_3hp=initiate_3hp*params$p_tox_nohosp_3hp,
            tox_nohosp_1hp=initiate_1hp*params$p_tox_nohosp_1hp,
+           tox_nohosp_3hr=initiate_3hr*params$p_tox_nohosp_3hr,
            tox_hosp_ipt=initiate_ipt*params$p_tox_hosp_ipt,
            tox_hosp_3hp=initiate_3hp*params$p_tox_hosp_3hp,
            tox_hosp_1hp=initiate_1hp*params$p_tox_hosp_1hp,
+           tox_hosp_3hr=initiate_3hr*params$p_tox_hosp_3hr,
            complete_ipt=initiate_ipt*params$p_complete_ipt*(1-(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt)),
            complete_3hp=initiate_3hp*params$p_complete_3hp*(1-(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp)),
            complete_1hp=initiate_1hp*params$p_complete_1hp*(1-(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp)),
+           complete_3hr=initiate_3hr*params$p_complete_3hr*(1-(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr)),
            part_complete_ipt=initiate_ipt - (complete_ipt + tox_nohosp_ipt + tox_hosp_ipt),
            part_complete_3hp=initiate_3hp - (complete_3hp + tox_nohosp_3hp + tox_hosp_3hp),
-           part_complete_1hp=initiate_1hp - (complete_1hp + tox_nohosp_1hp + tox_hosp_1hp)) 
+           part_complete_1hp=initiate_1hp - (complete_1hp + tox_nohosp_1hp + tox_hosp_1hp),
+           part_complete_3hr=initiate_3hr - (complete_3hr + tox_nohosp_3hr + tox_hosp_3hr)) 
   data <- data %>%
     mutate(ltbi = no_contact_ltbi +  #LTBI and no investigation
              contact_invest_tb_tn*(1-p_initiate)*params$p_ltbi/(1-params$p_tb) + #LTBI and didn't initiate
              initiate_ipt_ltbi + #LTBI and IPT initiated 
              initiate_3hp_ltbi +
-             initiate_1hp_ltbi -
+             initiate_1hp_ltbi +
+             initiate_3hr_ltbi -
              initiate_ipt_ltbi*params$p_complete_ipt*params$eff_ipt - #subtract out full IPT completion/efficacy
              initiate_3hp_ltbi*params$p_complete_3hp*params$eff_3hp - #subtract out full 3HP completion/efficacy
              initiate_1hp_ltbi*params$p_complete_1hp*params$eff_1hp - #subtract out full 1HP completion/efficacy
+             initiate_3hr_ltbi*params$p_complete_3hr*params$eff_3hr - #subtract out full 3hr completion/efficacy
              initiate_ipt_ltbi*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-
                                   params$p_tox_nohosp_ipt)*params$eff_ipt/2 - #subtract out IPT partial completion/efficacy
              initiate_3hp_ltbi*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-
                                   params$p_tox_nohosp_3hp)*params$eff_3hp/2 - #subtract out 3HP partial completion/efficacy
              initiate_1hp_ltbi*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-
-                                  params$p_tox_nohosp_1hp)*params$eff_1hp/2, #subtract out 1HP partial completion/efficacy
+                                  params$p_tox_nohosp_1hp)*params$eff_1hp/2 - #subtract out 1HP partial completion/efficacy
+             initiate_3hr_ltbi*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-
+                                  params$p_tox_nohosp_3hr)*params$eff_3hr/2, #subtract out 3hr partial completion/efficacy
            active_tb = (no_contact_tb + contact_invest_tb_fn)*(1-p_notif)*(1-params$p_die_tb) + #not notified
              (no_contact_tb + contact_invest_tb_fn)*p_notif*(1-params$p_die_tb_tx)*(1-p_success) + #notified but not tx success
              contact_invest_tb_tp*(1-params$p_die_tb_tx)*(1-p_success), #notified but not tx success
@@ -788,12 +852,15 @@ calc_tpt_outcomes_contacts <- function(data, params) {
              initiate_ipt_ltbi*params$p_complete_ipt*params$eff_ipt + #full IPT completion
              initiate_3hp_ltbi*params$p_complete_3hp*params$eff_3hp + #full 3HP completion
              initiate_1hp_ltbi*params$p_complete_1hp*params$eff_1hp + #full 1HP completion
+             initiate_3hr_ltbi*params$p_complete_3hr*params$eff_3hr + #full 3hr completion
              initiate_ipt_ltbi*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-params$p_tox_nohosp_ipt)*
              params$eff_ipt/2 + #partial IPT completion
              initiate_3hp_ltbi*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-params$p_tox_nohosp_3hp)*
              params$eff_3hp/2 + #partial 3HP completion
              initiate_1hp_ltbi*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-params$p_tox_nohosp_1hp)*
              params$eff_1hp/2 + #partial 1HP completion
+             initiate_3hr_ltbi*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-params$p_tox_nohosp_3hr)*
+             params$eff_3hr/2 + #partial 3hr completion
              contact_invest_tb_tp*(1-params$p_die_tb_tx)*p_success + #notified and cured
              (no_contact_tb + contact_invest_tb_fn)*p_notif*(1-params$p_die_tb_tx)*p_success, #notified and cured
            notif_tb = contact_invest_tb_tp + #ppl treated correctly from contact investigation - only used for costs
@@ -883,6 +950,7 @@ combine_yrs <- function(data, pop_type, policy_end_yr, end_yr) {
               initiate_ipt_negscreen=unique(initiate_ipt_negscreen[yrs_out==0]),
               initiate_3hp_negscreen=unique(initiate_3hp_negscreen[yrs_out==0]),
               initiate_1hp_negscreen=unique(initiate_1hp_negscreen[yrs_out==0]),
+              initiate_3hr_negscreen=unique(initiate_3hr_negscreen[yrs_out==0]),
               complete_ipt=unique(complete_ipt[yrs_out==0]),
               part_complete_ipt=unique(part_complete_ipt[yrs_out==0]),
               tox_nohosp_ipt=unique(tox_nohosp_ipt[yrs_out==0]),
@@ -895,6 +963,10 @@ combine_yrs <- function(data, pop_type, policy_end_yr, end_yr) {
               part_complete_1hp=unique(part_complete_1hp[yrs_out==0]),
               tox_nohosp_1hp=unique(tox_nohosp_1hp[yrs_out==0]),
               tox_hosp_1hp=unique(tox_hosp_1hp[yrs_out==0]),
+              complete_3hr=unique(complete_3hr[yrs_out==0]),
+              part_complete_3hr=unique(part_complete_3hr[yrs_out==0]),
+              tox_nohosp_3hr=unique(tox_nohosp_3hr[yrs_out==0]),
+              tox_hosp_3hr=unique(tox_hosp_3hr[yrs_out==0]),
               total=sum(total), 
               ltbi=sum(ltbi), active_tb=sum(active_tb), no_tb=sum(no_tb), 
               notif_tb=sum(notif_tb), cases=sum(cases), tb_deaths=sum(tb_deaths), 
@@ -912,6 +984,7 @@ combine_yrs <- function(data, pop_type, policy_end_yr, end_yr) {
                 initiate_ipt_negscreen=0,
                 initiate_3hp_negscreen=0,
                 initiate_1hp_negscreen=0,
+                initiate_3hr_negscreen=0,
                 complete_ipt=0,
                 part_complete_ipt=0,
                 tox_nohosp_ipt=0,
@@ -924,6 +997,10 @@ combine_yrs <- function(data, pop_type, policy_end_yr, end_yr) {
                 part_complete_1hp=0,
                 tox_nohosp_1hp=0,
                 tox_hosp_1hp=0,
+                complete_3hr=0,
+                part_complete_3hr=0,
+                tox_nohosp_3hr=0,
+                tox_hosp_3hr=0,
                 total=sum(total), ltbi=sum(ltbi), active_tb=sum(active_tb), 
                 no_tb=sum(no_tb), notif_tb=sum(notif_tb), cases=sum(cases), 
                 tb_deaths=sum(tb_deaths), 
@@ -989,7 +1066,16 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
                (complete_1hp + part_complete_1hp*0.5 + 
                   tox_nohosp_1hp*0.5 + tox_hosp_1hp*0.5)*
                params$n_visit_1hp*costs$outpatient +
-               initiate_1hp_negscreen*costs$outpatient*(params$cxr_screen==0))
+               initiate_1hp_negscreen*costs$outpatient*(params$cxr_screen==0),
+             cost_3hr=(complete_3hr + 
+                         part_complete_3hr*params$part_course_cost + 
+                         tox_nohosp_3hr*params$part_course_cost + 
+                         tox_hosp_3hr*params$part_course_cost)*
+               params$c_3hr*(1+params$c_delivery_3hr)*(1+params$wastage) +
+               (complete_3hr + part_complete_3hr*0.5 + 
+                  tox_nohosp_3hr*0.5 + tox_hosp_3hr*0.5)*
+               params$n_visit_3hr*costs$outpatient +
+               initiate_3hr_negscreen*costs$outpatient*(params$cxr_screen==0))
   } else if(length(params$c_3hp)>1 & pop_type %in% c("child", "adol", "adult")) {
     data <- data %>% 
       mutate(cost_ipt=(complete_ipt + 
@@ -1020,7 +1106,17 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
                (complete_1hp + part_complete_1hp*0.5 + 
                   tox_nohosp_1hp*0.5 + tox_hosp_1hp*0.5)*
                params$n_visit_1hp*costs$outpatient +
-               initiate_1hp_negscreen*costs$outpatient*(params$cxr_screen==0))
+               initiate_1hp_negscreen*costs$outpatient*(params$cxr_screen==0),
+             cost_3hr=(complete_3hr + 
+                         part_complete_3hr*params$part_course_cost + 
+                         tox_nohosp_3hr*params$part_course_cost + 
+                         tox_hosp_3hr*params$part_course_cost)*
+               params$c_3hr[as.character(year)]*(1+params$c_delivery_3hr)*
+               (1+params$wastage) +
+               (complete_3hr + part_complete_3hr*0.5 + 
+                  tox_nohosp_3hr*0.5 + tox_hosp_3hr*0.5)*
+               params$n_visit_3hr*costs$outpatient +
+               initiate_3hr_negscreen*costs$outpatient*(params$cxr_screen==0))
   } else if(length(params$c_3hp)==1 & pop_type=="plhiv") {
     data <- data %>% 
       mutate(cost_ipt=(complete_ipt + 
@@ -1046,7 +1142,15 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
                params$c_1hp*(1+params$c_delivery_1hp)*(1+params$wastage) +
                (complete_1hp + part_complete_1hp*0.5 + 
                   tox_nohosp_1hp*0.5 + tox_hosp_1hp*0.5)*
-               params$n_visit_1hp*costs$outpatient)
+               params$n_visit_1hp*costs$outpatient,
+             cost_3hr=(complete_3hr + 
+                         part_complete_3hr*params$part_course_cost + 
+                         tox_nohosp_3hr*params$part_course_cost + 
+                         tox_hosp_3hr*params$part_course_cost)*
+               params$c_3hr*(1+params$c_delivery_3hr)*(1+params$wastage) +
+               (complete_3hr + part_complete_3hr*0.5 + 
+                  tox_nohosp_3hr*0.5 + tox_hosp_3hr*0.5)*
+               params$n_visit_3hr*costs$outpatient)
   } else if(length(params$c_3hp)>1 & pop_type=="plhiv") {
     data <- data %>% 
       mutate(cost_ipt=(complete_ipt + 
@@ -1074,14 +1178,23 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
                (1+params$wastage) +
                (complete_1hp + part_complete_1hp*0.5 + 
                   tox_nohosp_1hp*0.5 + tox_hosp_1hp*0.5)*
-               params$n_visit_1hp*costs$outpatient)
+               params$n_visit_1hp*costs$outpatient,
+             cost_3hr=(complete_3hr + 
+                         part_complete_3hr*params$part_course_cost + 
+                         tox_nohosp_3hr*params$part_course_cost + 
+                         tox_hosp_3hr*params$part_course_cost)*
+               params$c_3hr[as.character(year)]*(1+params$c_delivery_3hr)*
+               (1+params$wastage) +
+               (complete_3hr + part_complete_3hr*0.5 + 
+                  tox_nohosp_3hr*0.5 + tox_hosp_3hr*0.5)*
+               params$n_visit_3hr*costs$outpatient)
   }
   #TPT adverse events - nohosp = tox_labs + outpatient
   #hosp = tox_labs + outpatient + 7 days inpatient
   data <- data %>% 
-    mutate(cost_tox=(tox_nohosp_ipt + tox_nohosp_3hp + tox_nohosp_1hp)*
+    mutate(cost_tox=(tox_nohosp_ipt + tox_nohosp_3hp + tox_nohosp_1hp + tox_nohosp_3hr)*
              (costs$lab_tox + costs$outpatient) + 
-             (tox_hosp_ipt + tox_hosp_3hp + tox_hosp_1hp)*
+             (tox_hosp_ipt + tox_hosp_3hp + tox_hosp_1hp + tox_hosp_3hr)*
              (costs$lab_tox + costs$outpatient + costs$inpatient*params$nday_hosp_tox))
   #ONGOING COSTS - ART and TB NOTIFICATIONS
   #ART for everyone left alive that isn't LTFU (PLHIV only) - include 4 outpatient visits too
@@ -1097,12 +1210,12 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
   data <- data %>% mutate(cost_impl=cost_impl_input)
   if(pop_type %in% c("child", "adol", "adult")) {
     data <- data %>% 
-      mutate(costs=cost_contact + cost_ipt + cost_3hp + cost_1hp + 
+      mutate(costs=cost_contact + cost_ipt + cost_3hp + cost_1hp + cost_3hr +
                cost_tox + cost_tx + cost_impl)
     data <- data %>% select(-c(cost_tests_contact, starts_with("c_imp")))
   } else if(pop_type=="plhiv") {
     data <- data %>% 
-      mutate(costs=cost_ipt + cost_3hp + cost_1hp + 
+      mutate(costs=cost_ipt + cost_3hp + cost_1hp + cost_3hr +
                cost_tox + cost_tx + cost_art + cost_impl)
   }
   data <- data %>% mutate(disc_costs=costs/((1+disc_fac)^(year-start_yr)))
@@ -1126,6 +1239,7 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
   price_tpt <- "base" #base, 3hp_reduced (3HP price only reduced by 50%), or vary (vary price widely in PSA)
   cost_tbtx <- "base" #base (main analysis, varies by country), vary (vary widely in PSA)
   visits_3hp <- 1 #1 or 2 monitoring visits (1 in main analysis - initiation and completion)
+  visits_3hr <- visits_3hp
   tpt_wastage <- "full courses"  #wastage factor for drugs (e.g. 0.1), or cost out "full courses" for all initiators
   comp_scen <- "none"
   
@@ -1134,6 +1248,7 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
     params$p_infect <- reinfect
   }
   params$n_visit_3hp <- visits_3hp
+  params$n_visit_3hr <- visits_3hr
   params$wastage <- ifelse(tpt_wastage=="full courses", 0, as.double(tpt_wastage))
   params$part_course_cost <- ifelse(tpt_wastage=="full courses", 1, 0.5)
   
@@ -1150,15 +1265,27 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
            initiate_3hp_covg_new=0,
            initiate_3hp_covg_prev=0,
            initiate_1hp_covg_new=0,
-           initiate_1hp_covg_prev=0)
+           initiate_1hp_covg_prev=0,
+           initiate_3hr_covg_new=0,
+           initiate_3hr_covg_prev=0)
   pop_calcs_tpt <- pop_calcs %>% 
     mutate(scenario=scenarios[[1]],
-           initiate_ipt_covg_new=pmin(covg[["6h"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]]), (covg[["6h"]]/(100*params$p_initiate))),
-           initiate_ipt_covg_prev=pmin(covg[["6h"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]]), (covg[["6h"]]/(100*params$p_initiate))),
-           initiate_3hp_covg_new=pmin(covg[["3hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]]), (covg[["3hp"]]/(100*params$p_initiate))),
-           initiate_3hp_covg_prev=pmin(covg[["3hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]]), (covg[["3hp"]]/(100*params$p_initiate))),
-           initiate_1hp_covg_new=pmin(covg[["1hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]]), (covg[["1hp"]]/(100*params$p_initiate))),
-           initiate_1hp_covg_prev=pmin(covg[["1hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]]), (covg[["1hp"]]/(100*params$p_initiate))))
+           initiate_ipt_covg_new=pmin(covg[["6h"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                      (covg[["6h"]]/(100*params$p_initiate))),
+           initiate_ipt_covg_prev=pmin(covg[["6h"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                       (covg[["6h"]]/(100*params$p_initiate))),
+           initiate_3hp_covg_new=pmin(covg[["3hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                      (covg[["3hp"]]/(100*params$p_initiate))),
+           initiate_3hp_covg_prev=pmin(covg[["3hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                       (covg[["3hp"]]/(100*params$p_initiate))),
+           initiate_1hp_covg_new=pmin(covg[["1hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                      (covg[["1hp"]]/(100*params$p_initiate))),
+           initiate_1hp_covg_prev=pmin(covg[["1hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                       (covg[["1hp"]]/(100*params$p_initiate))),
+           initiate_3hr_covg_new=pmin(covg[["3hr"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                      (covg[["3hr"]]/(100*params$p_initiate))),
+           initiate_3hr_covg_prev=pmin(covg[["3hr"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
+                                       (covg[["3hr"]]/(100*params$p_initiate))))
   pop <- bind_rows(pop_calcs_none, pop_calcs_tpt)
   
   #set up model
@@ -1188,11 +1315,11 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
            tb_deaths=0, non_tb_deaths=0,
            cum_tb_deaths=0, cum_non_tb_deaths=0,
            #TPT outcomes start out as 0 
-           initiate_ipt_est=0, initiate_3hp_est=0, initiate_1hp_est=0,
-           tox_nohosp_ipt_est=0, tox_nohosp_3hp_est=0, tox_nohosp_1hp_est=0,
-           tox_hosp_ipt_est=0, tox_hosp_3hp_est=0, tox_hosp_1hp_est=0,
-           complete_ipt_est=0, complete_3hp_est=0, complete_1hp_est=0,
-           part_complete_ipt_est=0, part_complete_3hp_est=0, part_complete_1hp_est=0,
+           initiate_ipt_est=0, initiate_3hp_est=0, initiate_1hp_est=0, initiate_3hr_est=0,
+           tox_nohosp_ipt_est=0, tox_nohosp_3hp_est=0, tox_nohosp_1hp_est=0, tox_nohosp_3hr_est=0,
+           tox_hosp_ipt_est=0, tox_hosp_3hp_est=0, tox_hosp_1hp_est=0, tox_hosp_3hr_est=0,
+           complete_ipt_est=0, complete_3hp_est=0, complete_1hp_est=0, complete_3hr_est=0,
+           part_complete_ipt_est=0, part_complete_3hp_est=0, part_complete_1hp_est=0, part_complete_3hr_est=0,
            #TB-TPT status - est not on TPT are not 0s - need to split up by latent status
            #LTBI are in plhiv_ltbi instead
            active_tb_est_tpt=0, 
@@ -1230,18 +1357,23 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
                                           initiate_ipt_est=replace(initiate_ipt_est, year==start_yr, plhiv_est$initiate_ipt_est),
                                           initiate_3hp_est=replace(initiate_3hp_est, year==start_yr, plhiv_est$initiate_3hp_est),
                                           initiate_1hp_est=replace(initiate_1hp_est, year==start_yr, plhiv_est$initiate_1hp_est),
+                                          initiate_3hr_est=replace(initiate_3hr_est, year==start_yr, plhiv_est$initiate_3hr_est),
                                           tox_nohosp_ipt_est=replace(tox_nohosp_ipt_est, year==start_yr, plhiv_est$tox_nohosp_ipt_est),
                                           tox_nohosp_3hp_est=replace(tox_nohosp_3hp_est, year==start_yr, plhiv_est$tox_nohosp_3hp_est),
                                           tox_nohosp_1hp_est=replace(tox_nohosp_1hp_est, year==start_yr, plhiv_est$tox_nohosp_1hp_est),
+                                          tox_nohosp_3hr_est=replace(tox_nohosp_3hr_est, year==start_yr, plhiv_est$tox_nohosp_3hr_est),
                                           tox_hosp_ipt_est=replace(tox_hosp_ipt_est, year==start_yr, plhiv_est$tox_hosp_ipt_est),
                                           tox_hosp_3hp_est=replace(tox_hosp_3hp_est, year==start_yr, plhiv_est$tox_hosp_3hp_est),
                                           tox_hosp_1hp_est=replace(tox_hosp_1hp_est, year==start_yr, plhiv_est$tox_hosp_1hp_est),
+                                          tox_hosp_3hr_est=replace(tox_hosp_3hr_est, year==start_yr, plhiv_est$tox_hosp_3hr_est),
                                           complete_ipt_est=replace(complete_ipt_est, year==start_yr, plhiv_est$complete_ipt_est),
                                           complete_3hp_est=replace(complete_3hp_est, year==start_yr, plhiv_est$complete_3hp_est),
                                           complete_1hp_est=replace(complete_1hp_est, year==start_yr, plhiv_est$complete_1hp_est),
+                                          complete_3hr_est=replace(complete_3hr_est, year==start_yr, plhiv_est$complete_3hr_est),
                                           part_complete_ipt_est=replace(part_complete_ipt_est, year==start_yr, plhiv_est$part_complete_ipt_est),
                                           part_complete_3hp_est=replace(part_complete_3hp_est, year==start_yr, plhiv_est$part_complete_3hp_est),
                                           part_complete_1hp_est=replace(part_complete_1hp_est, year==start_yr, plhiv_est$part_complete_1hp_est),
+                                          part_complete_3hr_est=replace(part_complete_3hr_est, year==start_yr, plhiv_est$part_complete_3hr_est),
                                           active_tb_est_tpt=replace(active_tb_est_tpt, year==start_yr, plhiv_est$active_tb_est_tpt),
                                           active_tb_est_not=replace(active_tb_est_not, year==start_yr, plhiv_est$active_tb_est_not),
                                           no_tb_est_tpt=replace(no_tb_est_tpt, year==start_yr, plhiv_est$no_tb_est_tpt),
@@ -1388,6 +1520,7 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   #options to be added later
   reinfect <- 0 #0=base case, or annual risk of infection
   visits_3hp <- 1 #1 or 3 visits (1 in main analysis). initiation visit is separate (part of screening)
+  visits_3hr <- visits_3hp
   cxr_screen_5plus <- 1 #whether to include CXR in the screening algorithm for contacts aged 5+ (w/ symptom screen, vs. symptom screen alone)
   tb_test_child <- "cxr" #cxr or xpert as a test for children < 5
   tpt_wastage <- "full courses"  #wastage factor for drugs (e.g. 0.1), or cost out "full courses" for all initiators
@@ -1407,6 +1540,9 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   child_params$n_visit_3hp <- visits_3hp
   adol_params$n_visit_3hp <- visits_3hp
   adult_params$n_visit_3hp <- visits_3hp
+  child_params$n_visit_3hr <- visits_3hr
+  adol_params$n_visit_3hr <- visits_3hr
+  adult_params$n_visit_3hr <- visits_3hr
   
   #calculate additional screening and testing probabilities based on options
   child_params$p_screen <- child_params$p_symptom
@@ -1458,14 +1594,17 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   pop_calcs <- pop_calcs %>% mutate(child_ipt=if_else(scenario!="tpt", 0, child_ipt/100),
                                     child_3hp=if_else(scenario!="tpt", 0, child_3hp/100),
                                     child_1hp=if_else(scenario!="tpt", 0, child_1hp/100),
+                                    child_3hr=if_else(scenario!="tpt", 0, child_3hr/100),
                                     child_none=if_else(scenario!="tpt", 0, child_none/100),
                                     adol_ipt=if_else(scenario!="tpt", 0, adol_ipt/100),
                                     adol_3hp=if_else(scenario!="tpt", 0, adol_3hp/100),
                                     adol_1hp=if_else(scenario!="tpt", 0, adol_1hp/100),
+                                    adol_3hr=if_else(scenario!="tpt", 0, adol_3hr/100),
                                     adol_none=if_else(scenario!="tpt", 0, adol_none/100),
                                     adult_ipt=if_else(scenario!="tpt", 0, adult_ipt/100),
                                     adult_3hp=if_else(scenario!="tpt", 0, adult_3hp/100),
                                     adult_1hp=if_else(scenario!="tpt", 0, adult_1hp/100),
+                                    adult_3hr=if_else(scenario!="tpt", 0, adult_3hr/100),
                                     adult_none=if_else(scenario!="tpt", 0, adult_none/100),
                                     scenario=if_else(scenario=="tpt", scenarios[[1]], scenarios[[2]]))
 
@@ -1476,23 +1615,32 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
     rename("initiate_ipt_covg"="child_ipt", 
            "initiate_3hp_covg"="child_3hp",
            "initiate_1hp_covg"="child_1hp",
+           "initiate_3hr_covg"="child_3hr",
            "pop"="pop04", "hh"="hh_child") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = pmin(1, child_none + (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(child_params$p_initiate)), 
+           hh_contact_covg = pmin(1, child_none + (initiate_ipt_covg + initiate_3hp_covg + 
+                                                     initiate_1hp_covg + initiate_3hr_covg)/(child_params$p_initiate)), 
            prop_ipt=if_else(initiate_ipt_covg==0, 0,
-                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + child_none)),
+                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + child_none)),
            prop_3hp=if_else(initiate_3hp_covg==0, 0, 
-                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + child_none)),
+                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + child_none)),
            prop_1hp=if_else(initiate_1hp_covg==0, 0, 
-                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + child_none)),
+                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + child_none)),
+           prop_3hr=if_else(initiate_3hr_covg==0, 0, 
+                            initiate_3hr_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + child_none)),
            prop_none=if_else(child_none==0, 0,
-                             child_none/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + child_none)),
+                             child_none/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                           initiate_3hr_covg + child_none)),
            contact_invest_num = hh_contact_covg*total,
-           initiate_num=contact_invest_num*p_hh_child_tpt*(prop_ipt+prop_3hp+prop_1hp)*child_params$p_initiate,
-           #p_initiate=if_else(contact_only_child==1, 0, child_params$p_initiate),
+           initiate_num=contact_invest_num*p_hh_child_tpt*(prop_ipt+prop_3hp+prop_1hp+prop_3hr)*child_params$p_initiate,
            p_initiate=child_params$p_initiate) %>%
     select(country, code, year, scenario,
-           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, prop_none, contact_invest_num, initiate_num, p_initiate)
+           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, prop_3hr, prop_none, 
+           contact_invest_num, initiate_num, p_initiate)
   child <- child %>% mutate(p_notif=child_params$p_notif,
                             p_success=child_params$p_success,
                             p_die=child_params$p_die)
@@ -1554,23 +1702,32 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
     rename("initiate_ipt_covg"="adol_ipt", 
            "initiate_3hp_covg"="adol_3hp",
            "initiate_1hp_covg"="adol_1hp",
+           "initiate_3hr_covg"="adol_3hr",
            "pop"="pop514", "hh"="hh_adol") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = pmin(1, adol_none + (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(adol_params$p_initiate)), 
+           hh_contact_covg = pmin(1, adol_none + (initiate_ipt_covg + initiate_3hp_covg + 
+                                                    initiate_3hr_covg + initiate_1hp_covg)/(adol_params$p_initiate)), 
            prop_ipt=if_else(initiate_ipt_covg==0, 0,
-                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adol_none)),
+                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + adol_none)),
            prop_3hp=if_else(initiate_3hp_covg==0, 0, 
-                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adol_none)),
+                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg +
+                                                 initiate_3hr_covg + adol_none)),
            prop_1hp=if_else(initiate_1hp_covg==0, 0, 
-                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adol_none)),
+                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + adol_none)),
+           prop_3hr=if_else(initiate_3hr_covg==0, 0, 
+                            initiate_3hr_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + adol_none)),
            prop_none=if_else(adol_none==0, 0,
-                             adol_none/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adol_none)),
+                             adol_none/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                          initiate_3hr_covg + adol_none)),
            contact_invest_num = hh_contact_covg*total,
-           initiate_num=contact_invest_num*p_hh_adol_tpt*(prop_ipt+prop_3hp+prop_1hp)*adol_params$p_initiate,
-           #p_initiate=if_else(contact_only_adol==1, 0, adol_params$p_initiate),
+           initiate_num=contact_invest_num*p_hh_adol_tpt*(prop_ipt+prop_3hp+prop_1hp+prop_3hr)*adol_params$p_initiate,
            p_initiate=adol_params$p_initiate) %>%
     select(country, code, year, scenario,
-           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, prop_none, contact_invest_num, initiate_num, p_initiate)
+           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, prop_3hr, prop_none, 
+           contact_invest_num, initiate_num, p_initiate)
   adol <- adol %>% mutate(p_notif=adol_params$p_notif,
                           p_success=adol_params$p_success,
                           p_die=adol_params$p_die)
@@ -1628,23 +1785,32 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
     rename("initiate_ipt_covg"="adult_ipt", 
            "initiate_3hp_covg"="adult_3hp",
            "initiate_1hp_covg"="adult_1hp",
+           "initiate_3hr_covg"="adult_3hr",
            "pop"="popadult", "hh"="hh_adult") %>%
     mutate(total=tb_notif_new*hh,
-           hh_contact_covg = pmin(1, adult_none + (initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg)/(adult_params$p_initiate)), 
+           hh_contact_covg = pmin(1, adult_none + (initiate_ipt_covg + initiate_3hp_covg + 
+                                                     initiate_3hr_covg + initiate_1hp_covg)/(adult_params$p_initiate)), 
            prop_ipt=if_else(initiate_ipt_covg==0, 0,
-                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adult_none)),
+                            initiate_ipt_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + adult_none)),
            prop_3hp=if_else(initiate_3hp_covg==0, 0, 
-                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adult_none)),
+                            initiate_3hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + adult_none)),
            prop_1hp=if_else(initiate_1hp_covg==0, 0, 
-                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adult_none)),
+                            initiate_1hp_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + adult_none)),
+           prop_3hr=if_else(initiate_3hr_covg==0, 0, 
+                            initiate_3hr_covg/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                                 initiate_3hr_covg + adult_none)),
            prop_none=if_else(adult_none==0, 0,
-                             adult_none/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + adult_none)),
+                             adult_none/(initiate_ipt_covg + initiate_3hp_covg + initiate_1hp_covg + 
+                                           initiate_3hr_covg + adult_none)),
            contact_invest_num = hh_contact_covg*total,
-           initiate_num=contact_invest_num*p_hh_adult_tpt*(prop_ipt+prop_3hp+prop_1hp)*adult_params$p_initiate,
-           #p_initiate=if_else(contact_only_adult==1, 0, adult_params$p_initiate),
+           initiate_num=contact_invest_num*p_hh_adult_tpt*(prop_ipt+prop_3hp+prop_1hp+prop_3hr)*adult_params$p_initiate,
            p_initiate=adult_params$p_initiate) %>%
     select(country, code, year, scenario,
-           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, prop_none, contact_invest_num, initiate_num, p_initiate)
+           pop, hh, total, prop_ipt, prop_3hp, prop_1hp, prop_3hr, prop_none, 
+           contact_invest_num, initiate_num, p_initiate)
   adult <- adult %>% mutate(p_notif=adult_params$p_notif,
                             p_success=adult_params$p_success,
                             p_die=adult_params$p_die)
@@ -1715,30 +1881,34 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
   child_comb <- child_comb %>% 
     mutate(initiate_ipt=complete_ipt+part_complete_ipt+tox_nohosp_ipt+tox_hosp_ipt,
            initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
-           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp)
+           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp,
+           initiate_3hr=complete_3hr+part_complete_3hr+tox_nohosp_3hr+tox_hosp_3hr)
   adol_comb <- adol_comb %>% 
     mutate(initiate_ipt=complete_ipt+part_complete_ipt+tox_nohosp_ipt+tox_hosp_ipt,
            initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
-           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp)
+           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp,
+           initiate_3hr=complete_3hr+part_complete_3hr+tox_nohosp_3hr+tox_hosp_3hr)
   adult_comb <- adult_comb %>% 
     mutate(initiate_ipt=complete_ipt+part_complete_ipt+tox_nohosp_ipt+tox_hosp_ipt,
            initiate_3hp=complete_3hp+part_complete_3hp+tox_nohosp_3hp+tox_hosp_3hp,
-           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp)
+           initiate_1hp=complete_1hp+part_complete_1hp+tox_nohosp_1hp+tox_hosp_1hp,
+           initiate_3hr=complete_3hr+part_complete_3hr+tox_nohosp_3hr+tox_hosp_3hr)
   out <- list("child"=child_comb, "adol"=adol_comb, "adult"=adult_comb)
   return(out)
 }
 
 
 
-regimens <- c("3HP", "1HP", "6H", "None")
+regimens <- c("3HP", "1HP", "3HR", "6H", "None")
 countries <- c("Ethiopia", "India", "Nigeria", "South Africa", "Zambia")
 scenarios <- c("TPT Scaleup", "Comparator (no TPT)")
 cost_colors <- data.frame(row.names=c("cost_tx", "cost_art", "cost_contact", 
-                                      "cost_3hp", "cost_1hp", 
+                                      "cost_3hp", "cost_1hp", "cost_3hr",
                                       "cost_ipt", "cost_tox"),
                           colors=brewer.pal(n=7, name="Set2"),
                           labels=c("TB treatment", "ART",  "Contact investigation & diagnosis", 
                                    "3HP drugs & clinic visits", "1HP drugs & clinic visits",
+                                   "3HR drugs & clinic visits",
                                    "6H drugs & clinic visits", "TPT toxicity management")
                           )
 
@@ -1863,7 +2033,11 @@ ui <- navbarPage(
                inputId="split_plhiv_1hp_2024",
                label=em(strong("Percent 1HP")),
                value=0)),
-             column(2, numericInput(
+      column(2, numericInput(
+        inputId="split_plhiv_3hr_2024",
+        label=em(strong("Percent 3HR")),
+        value=0)),
+      column(2, numericInput(
                inputId="split_plhiv_6h_2024",
                label=em(strong("Percent 6H")),
                value=0)),
@@ -1881,6 +2055,10 @@ ui <- navbarPage(
                value=100)),
              column(2, numericInput(
                inputId="split_plhiv_1hp_2025",
+               label=NULL,
+               value=0)),
+             column(2, numericInput(
+               inputId="split_plhiv_3hr_2025",
                label=NULL,
                value=0)),
              column(2, numericInput(
@@ -1904,6 +2082,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_plhiv_3hr_2026",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_plhiv_6h_2026", 
                    label=NULL,
                    value=0)),
@@ -1921,6 +2103,10 @@ ui <- navbarPage(
                    value=100)),
                  column(2, numericInput(
                    inputId="split_plhiv_1hp_2027",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_plhiv_3hr_2027",
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
@@ -1944,6 +2130,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_plhiv_3hr_2028",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_plhiv_6h_2028",
                    label=NULL,
                    value=0)),
@@ -1961,6 +2151,10 @@ ui <- navbarPage(
                value=100)),
              column(2, numericInput(
                inputId="split_child_1hp_2024",
+               label=em(strong("Percent 1HP")),
+               value=0)),
+             column(2, numericInput(
+               inputId="split_child_3hr_2024",
                label=em(strong("Percent 1HP")),
                value=0)),
              column(2, numericInput(
@@ -1988,6 +2182,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_child_3hr_2025",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_child_6h_2025",
                    label=NULL,
                    value=0)),
@@ -2009,6 +2207,10 @@ ui <- navbarPage(
                    value=100)),
                  column(2, numericInput(
                    inputId="split_child_1hp_2026",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_child_3hr_2026",
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
@@ -2036,6 +2238,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_child_3hr_2027",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_child_6h_2027",
                    label=NULL,
                    value=0)),
@@ -2057,6 +2263,10 @@ ui <- navbarPage(
                    value=100)),
                  column(2, numericInput(
                    inputId="split_child_1hp_2028",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_child_3hr_2028",
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
@@ -2084,6 +2294,10 @@ ui <- navbarPage(
                label=em(strong("Percent 1HP")),
                value=0)),
              column(2, numericInput(
+               inputId="split_adol_3hr_2024",
+               label=em(strong("Percent 1HP")),
+               value=0)),
+             column(2, numericInput(
                inputId="split_adol_6h_2024",
                label=em(strong("Percent 6H")),
                value=0)),
@@ -2105,6 +2319,10 @@ ui <- navbarPage(
                    value=100)),
                  column(2, numericInput(
                    inputId="split_adol_1hp_2025",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adol_3hr_2025",
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
@@ -2132,6 +2350,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_adol_3hr_2026",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_adol_6h_2026", 
                    label=NULL,
                    value=0)),
@@ -2153,6 +2375,10 @@ ui <- navbarPage(
                    value=100)),
                  column(2, numericInput(
                    inputId="split_adol_1hp_2027",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adol_3hr_2027",
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
@@ -2180,6 +2406,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_adol_3hr_2028",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_adol_6h_2028",
                    label=NULL,
                    value=0)),
@@ -2201,6 +2431,10 @@ ui <- navbarPage(
                value=100)),
              column(2, numericInput(
                inputId="split_adult_1hp_2024",
+               label=em(strong("Percent 1HP")),
+               value=0)),
+             column(2, numericInput(
+               inputId="split_adult_3hr_2024",
                label=em(strong("Percent 1HP")),
                value=0)),
              column(2, numericInput(
@@ -2228,6 +2462,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_adult_3hr_2025",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_adult_6h_2025",
                    label=NULL,
                    value=0)),
@@ -2249,6 +2487,10 @@ ui <- navbarPage(
                    value=100)),
                  column(2, numericInput(
                    inputId="split_adult_1hp_2026",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adult_3hr_2026",
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
@@ -2276,6 +2518,10 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
+                   inputId="split_adult_3hr_2027",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
                    inputId="split_adult_6h_2027",
                    label=NULL,
                    value=0)),
@@ -2297,6 +2543,10 @@ ui <- navbarPage(
                    value=100)),
                  column(2, numericInput(
                    inputId="split_adult_1hp_2028",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adult_3hr_2028",
                    label=NULL,
                    value=0)),
                  column(2, numericInput(
@@ -2417,6 +2667,22 @@ ui <- navbarPage(
         label="1HP cost per contact 15+",
         value=22)),
       column(1, numericInput(
+        inputId="c_3hr_plhiv",
+        label="3HR cost per PLHIV",
+        value=38)),
+      column(1, numericInput(
+        inputId="c_3hr_child",
+        label="3HR cost per contact < 5",
+        value=19)),
+      column(1, numericInput(
+        inputId="c_3hr_adol",
+        label="3HR cost per contact 5-14",
+        value=38)),
+      column(1, numericInput(
+        inputId="c_3hr_adult",
+        label="3HR cost per contact 15+",
+        value=38)),
+      column(1, numericInput(
         inputId="c_6h_plhiv",
         label="6H cost per PLHIV",
         value=7.2)),
@@ -2479,7 +2745,7 @@ ui <- navbarPage(
     h4("Instructions"),
     HTML("<br> This tool can be used to estimate the costs of scaling up a TB preventive treatment program for people with HIV (PLHIV) and/or household contacts of notified TB patients (contacts). Costs are calculated for a <i> TPT Scenario </i>, which the user specifies, and a <i> Comparator Scenario </i>, which includes 0% TPT coverage and 0% coverage of household contact investigation"),
     HTML("<br> <br> To get started, navigate to the <b> Main </b> tab using the toolbar on the top of your browser screen. "),
-    HTML("Select a country using the dropdown menu, then select the desired coverage level (proportion of eligible PLHIV or household contacts that initiate TPT each year) and regimen (3HP, 1HP, 6H, or None/No TPT), and then click the <b> Submit </b> button on the top left, which runs the model and updates the figures."),
+    HTML("Select a country using the dropdown menu, then select the desired coverage level (proportion of eligible PLHIV or household contacts that initiate TPT each year) and regimen (3HP, 1HP, 3HR, 6H, or None/No TPT), and then click the <b> Submit </b> button on the top left, which runs the model and updates the figures."),
     HTML("For household contacts, selecting None as the regimen type indicates coverage of contact investigation only. This option is not available for PLHIV."),
     HTML("Note that coverage is defined as the percent of the eligible target population initiating TPT. Because of < 100% TPT acceptance, coverage can be effectively capped at < 100% - but this can be adjusted in <b> Other Options </b> (see below)."),
     HTML("<br> <br> The tool will automatically populate with parameters relevant to a given country (e.g., size of target populations, unit costs) and regimen (e.g., drug costs and completion), and will assume the same coverage level over a 5-year period."),
@@ -2491,7 +2757,7 @@ ui <- navbarPage(
          <li> For household contacts, <b> TPT coverage </b> is defined as the percent (from 0-100%) of eligible contacts that are investigated for TB and/or initiate any type of TPT in a given year. </li>
          <li> For both PLHIV and contacts, the remaining columns in <b> Advanced Coverage Options </b> indicate the split of TPT coverage by regimen (and for household contacts, no TPT, with contact investigation only). Note that these percentages must sum to 100%. </li>
          </ul>"),
-    HTML("For example, specifying 40% total coverage for contacts aged 5-14 years, with Percent 3HP = 50%, Percent 1HP = 25%, Percent 6H = 0%, and Percent No TPT = 25%, would mean that 20% of eligible household contacts 5-14 intitiate 3HP, 10% initiate 1HP, 10% receive contact investigation only but don't initiate any TPT, and 60% are not investigated (and do not initiate TPT)."),
+    HTML("For example, specifying 40% total coverage for contacts aged 5-14 years, with Percent 3HP = 50%, Percent 1HP = 25%, Percent 3HR = 0%, Percent 6H = 0%, and Percent No TPT = 25%, would mean that 20% of eligible household contacts 5-14 intitiate 3HP, 10% initiate 1HP, 10% receive contact investigation only but don't initiate any TPT, and 60% are not investigated (and do not initiate TPT)."),
     HTML("<br> <br> The <b> Other Options </b> tab allows users to update the underlying sizes of the target populations, change TPT acceptance rates, and impute unit costs. Changes to this tab apply to both the <i> TPT Scenario </i> and the <i> Comparator Scenario </i>."),
     HTML("Some definitions relevant to parameters in the <b> Other Options </b> tab are included below:
          <ul>
@@ -2538,121 +2804,141 @@ server <- function(input, output, session) {
   iv$add_rule("initiate_adol", sv_between(0.1, 100))
   iv$add_rule("initiate_adult", sv_between(0.1, 100))
   output$split_plhiv_2024 <- renderText({
-    out <- ifelse(input$split_plhiv_3hp_2024 + input$split_plhiv_1hp_2024 + input$split_plhiv_6h_2024!=100,
+    out <- ifelse(input$split_plhiv_3hp_2024 + input$split_plhiv_1hp_2024 + 
+                    input$split_plhiv_3hr_2024 + input$split_plhiv_6h_2024!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_plhiv_2025 <- renderText({
-    out <- ifelse(input$split_plhiv_3hp_2025 + input$split_plhiv_1hp_2025 + input$split_plhiv_6h_2025!=100,
+    out <- ifelse(input$split_plhiv_3hp_2025 + input$split_plhiv_1hp_2025 + 
+                    input$split_plhiv_3hr_2025 + input$split_plhiv_6h_2025!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_plhiv_2026 <- renderText({
-    out <- ifelse(input$split_plhiv_3hp_2026 + input$split_plhiv_1hp_2026 + input$split_plhiv_6h_2026!=100,
+    out <- ifelse(input$split_plhiv_3hp_2026 + input$split_plhiv_1hp_2026 + 
+                    input$split_plhiv_3hr_2026 + input$split_plhiv_6h_2026!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_plhiv_2027 <- renderText({
-    out <- ifelse(input$split_plhiv_3hp_2027 + input$split_plhiv_1hp_2027 + input$split_plhiv_6h_2027!=100,
+    out <- ifelse(input$split_plhiv_3hp_2027 + input$split_plhiv_1hp_2027 + 
+                    input$split_plhiv_3hr_2027 + input$split_plhiv_6h_2027!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_plhiv_2028 <- renderText({
-    out <- ifelse(input$split_plhiv_3hp_2028 + input$split_plhiv_1hp_2028 + input$split_plhiv_6h_2028!=100,
+    out <- ifelse(input$split_plhiv_3hp_2028 + input$split_plhiv_1hp_2028 + 
+                    input$split_plhiv_3hr_2028 + input$split_plhiv_6h_2028!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_child_2024 <- renderText({
-    out <- ifelse(input$split_child_3hp_2024 + input$split_child_1hp_2024 + input$split_child_6h_2024 + input$split_child_none_2024!=100,
+    out <- ifelse(input$split_child_3hp_2024 + input$split_child_1hp_2024 + input$split_child_3hr_2024 +
+                    input$split_child_6h_2024 + input$split_child_none_2024!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_child_2025 <- renderText({
-    out <- ifelse(input$split_child_3hp_2025 + input$split_child_1hp_2025 + input$split_child_6h_2025 + input$split_child_none_2025!=100,
+    out <- ifelse(input$split_child_3hp_2025 + input$split_child_1hp_2025 + input$split_child_3hr_2025 +
+                    input$split_child_6h_2025 + input$split_child_none_2025!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_child_2026 <- renderText({
-    out <- ifelse(input$split_child_3hp_2026 + input$split_child_1hp_2026 + input$split_child_6h_2026 + input$split_child_none_2026!=100,
+    out <- ifelse(input$split_child_3hp_2026 + input$split_child_1hp_2026 + input$split_child_3hr_2026 +
+                    input$split_child_6h_2026 + input$split_child_none_2026!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_child_2027 <- renderText({
-    out <- ifelse(input$split_child_3hp_2027 + input$split_child_1hp_2027 + input$split_child_6h_2027 + input$split_child_none_2027!=100,
+    out <- ifelse(input$split_child_3hp_2027 + input$split_child_1hp_2027 + input$split_child_3hr_2027 +
+                    input$split_child_6h_2027 + input$split_child_none_2027!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_child_2028 <- renderText({
-    out <- ifelse(input$split_child_3hp_2028 + input$split_child_1hp_2028 + input$split_child_6h_2028 + input$split_child_none_2028!=100,
+    out <- ifelse(input$split_child_3hp_2028 + input$split_child_1hp_2028 + input$split_child_3hr_2028 +
+                    input$split_child_6h_2028 + input$split_child_none_2028!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adol_2024 <- renderText({
-    out <- ifelse(input$split_adol_3hp_2024 + input$split_adol_1hp_2024 + input$split_adol_6h_2024 + input$split_adol_none_2024!=100,
+    out <- ifelse(input$split_adol_3hp_2024 + input$split_adol_1hp_2024 + input$split_adol_3hr_2024 +
+                    input$split_adol_6h_2024 + input$split_adol_none_2024!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adol_2025 <- renderText({
-    out <- ifelse(input$split_adol_3hp_2025 + input$split_adol_1hp_2025 + input$split_adol_6h_2025 + input$split_adol_none_2025!=100,
+    out <- ifelse(input$split_adol_3hp_2025 + input$split_adol_1hp_2025 + input$split_adol_3hr_2025 +
+                    input$split_adol_6h_2025 + input$split_adol_none_2025!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adol_2026 <- renderText({
-    out <- ifelse(input$split_adol_3hp_2026 + input$split_adol_1hp_2026 + input$split_adol_6h_2026 + input$split_adol_none_2026!=100,
+    out <- ifelse(input$split_adol_3hp_2026 + input$split_adol_1hp_2026 + input$split_adol_3hr_2026 +
+                    input$split_adol_6h_2026 + input$split_adol_none_2026!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adol_2027 <- renderText({
-    out <- ifelse(input$split_adol_3hp_2027 + input$split_adol_1hp_2027 + input$split_adol_6h_2027 + input$split_adol_none_2027!=100,
+    out <- ifelse(input$split_adol_3hp_2027 + input$split_adol_1hp_2027 + input$split_adol_3hr_2027 +
+                    input$split_adol_6h_2027 + input$split_adol_none_2027!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adol_2028 <- renderText({
-    out <- ifelse(input$split_adol_3hp_2028 + input$split_adol_1hp_2028 + input$split_adol_6h_2028 + input$split_adol_none_2028!=100,
+    out <- ifelse(input$split_adol_3hp_2028 + input$split_adol_1hp_2028 + input$split_adol_3hr_2028 +
+                    input$split_adol_6h_2028 + input$split_adol_none_2028!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adult_2024 <- renderText({
-    out <- ifelse(input$split_adult_3hp_2024 + input$split_adult_1hp_2024 + input$split_adult_6h_2024 + input$split_adult_none_2024!=100,
+    out <- ifelse(input$split_adult_3hp_2024 + input$split_adult_1hp_2024 + input$split_adult_3hr_2024 +
+                    input$split_adult_6h_2024 + input$split_adult_none_2024!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adult_2025 <- renderText({
-    out <- ifelse(input$split_adult_3hp_2025 + input$split_adult_1hp_2025 + input$split_adult_6h_2025 + input$split_adult_none_2025!=100,
+    out <- ifelse(input$split_adult_3hp_2025 + input$split_adult_1hp_2025 + input$split_adult_3hr_2025 +
+                    input$split_adult_6h_2025 + input$split_adult_none_2025!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adult_2026 <- renderText({
-    out <- ifelse(input$split_adult_3hp_2026 + input$split_adult_1hp_2026 + input$split_adult_6h_2026 + input$split_adult_none_2026!=100,
+    out <- ifelse(input$split_adult_3hp_2026 + input$split_adult_1hp_2026 + input$split_adult_3hr_2026 +
+                    input$split_adult_6h_2026 + input$split_adult_none_2026!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adult_2027 <- renderText({
-    out <- ifelse(input$split_adult_3hp_2027 + input$split_adult_1hp_2027 + input$split_adult_6h_2027 + input$split_adult_none_2027!=100,
+    out <- ifelse(input$split_adult_3hp_2027 + input$split_adult_1hp_2027 + input$split_adult_3hr_2027 +
+                    input$split_adult_6h_2027 + input$split_adult_none_2027!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
   output$split_adult_2028 <- renderText({
-    out <- ifelse(input$split_adult_3hp_2028 + input$split_adult_1hp_2028 + input$split_adult_6h_2028 + input$split_adult_none_2028!=100,
+    out <- ifelse(input$split_adult_3hp_2028 + input$split_adult_1hp_2028 + input$split_adult_3hr_2028 +
+                    input$split_adult_6h_2028 + input$split_adult_none_2028!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
@@ -2732,6 +3018,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_plhiv=="1HP")*100)
     updateNumericInput(session, "split_plhiv_1hp_2028",
                        value=(input$tpt_plhiv=="1HP")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2024",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2025",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2026",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2027",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2028",
+                       value=(input$tpt_plhiv=="3HR")*100)
     updateNumericInput(session, "split_plhiv_6h_2024",
                        value=(input$tpt_plhiv=="6H")*100)
     updateNumericInput(session, "split_plhiv_6h_2025",
@@ -2764,6 +3060,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_child=="1HP")*100)
     updateNumericInput(session, "split_child_1hp_2028",
                        value=(input$tpt_child=="1HP")*100)
+    updateNumericInput(session, "split_child_3hr_2024",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2025",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2026",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2027",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2028",
+                       value=(input$tpt_child=="3HR")*100)
     updateNumericInput(session, "split_child_6h_2024",
                        value=(input$tpt_child=="6H")*100)
     updateNumericInput(session, "split_child_6h_2025",
@@ -2806,6 +3112,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_adol=="1HP")*100)
     updateNumericInput(session, "split_adol_1hp_2028",
                        value=(input$tpt_adol=="1HP")*100)
+    updateNumericInput(session, "split_adol_3hr_2024",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2025",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2026",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2027",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2028",
+                       value=(input$tpt_adol=="3HR")*100)
     updateNumericInput(session, "split_adol_6h_2024",
                        value=(input$tpt_adol=="6H")*100)
     updateNumericInput(session, "split_adol_6h_2025",
@@ -2848,6 +3164,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_adult=="1HP")*100)
     updateNumericInput(session, "split_adult_1hp_2028",
                        value=(input$tpt_adult=="1HP")*100)
+    updateNumericInput(session, "split_adult_3hr_2024",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2025",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2026",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2027",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2028",
+                       value=(input$tpt_adult=="3HR")*100)
     updateNumericInput(session, "split_adult_6h_2024",
                        value=(input$tpt_adult=="6H")*100)
     updateNumericInput(session, "split_adult_6h_2025",
@@ -2886,15 +3212,19 @@ server <- function(input, output, session) {
     plhiv_params[["c_art_yr"]] <- input$c_art
     plhiv_params$c_1hp <- input$c_1hp_plhiv
     plhiv_params$c_3hp <- input$c_3hp_plhiv
+    plhiv_params$c_3hr <- input$c_3hr_plhiv
     plhiv_params$c_ipt <- input$c_6h_plhiv
     child_params$c_1hp <- input$c_1hp_child
     child_params$c_3hp <- input$c_3hp_child
+    child_params$c_3hr <- input$c_3hr_child
     child_params$c_ipt <- input$c_6h_child
     adol_params$c_1hp <- input$c_1hp_adol
     adol_params$c_3hp <- input$c_3hp_adol
+    adol_params$c_3hr <- input$c_3hr_adol
     adol_params$c_ipt <- input$c_6h_adol
     adult_params$c_1hp <- input$c_1hp_adult
     adult_params$c_3hp <- input$c_3hp_adult
+    adult_params$c_3hr <- input$c_3hr_adult
     adult_params$c_ipt <- input$c_6h_adult
     plhiv_params$p_initiate <- input$initiate_plhiv/100
     child_params$p_initiate <- input$initiate_child/100
@@ -2921,6 +3251,11 @@ server <- function(input, output, session) {
                         input$covg_plhiv_2026*input$split_plhiv_1hp_2026/100, 
                         input$covg_plhiv_2027*input$split_plhiv_1hp_2027/100, 
                         input$covg_plhiv_2028*input$split_plhiv_1hp_2028/100)
+    covg_plhiv_3hr <- c(input$covg_plhiv_2024*input$split_plhiv_3hr_2024/100, 
+                        input$covg_plhiv_2025*input$split_plhiv_3hr_2025/100, 
+                        input$covg_plhiv_2026*input$split_plhiv_3hr_2026/100, 
+                        input$covg_plhiv_2027*input$split_plhiv_3hr_2027/100, 
+                        input$covg_plhiv_2028*input$split_plhiv_3hr_2028/100)
     covg_plhiv_6h <- c(input$covg_plhiv_2024*input$split_plhiv_6h_2024/100, 
                         input$covg_plhiv_2025*input$split_plhiv_6h_2025/100, 
                         input$covg_plhiv_2026*input$split_plhiv_6h_2026/100, 
@@ -2928,6 +3263,7 @@ server <- function(input, output, session) {
                         input$covg_plhiv_2028*input$split_plhiv_6h_2028/100)
     covg_plhiv <- list("3hp"=covg_plhiv_3hp,
                        "1hp"=covg_plhiv_1hp,
+                       "3hr"=covg_plhiv_3hr,
                        "6h"=covg_plhiv_6h)
     plhiv_output <- run_model_plhiv(input$country, NULL, covg_plhiv, scenarios, NULL, plhiv_params, pop_calcs)
     child_params <- c(child_params, other_params, cost_params, 
@@ -2959,6 +3295,11 @@ server <- function(input, output, session) {
                         input$covg_child_2026*input$split_child_1hp_2026/100, 
                         input$covg_child_2027*input$split_child_1hp_2027/100, 
                         input$covg_child_2028*input$split_child_1hp_2028/100)
+    covg_child_3hr <- c(input$covg_child_2024*input$split_child_3hr_2024/100, 
+                        input$covg_child_2025*input$split_child_3hr_2025/100, 
+                        input$covg_child_2026*input$split_child_3hr_2026/100, 
+                        input$covg_child_2027*input$split_child_3hr_2027/100, 
+                        input$covg_child_2028*input$split_child_3hr_2028/100)
     covg_child_6h <- c(input$covg_child_2024*input$split_child_6h_2024/100, 
                        input$covg_child_2025*input$split_child_6h_2025/100, 
                        input$covg_child_2026*input$split_child_6h_2026/100, 
@@ -2972,6 +3313,7 @@ server <- function(input, output, session) {
     covg_child <- data.frame("year"=2024:2028,
                              "child_3hp"=covg_child_3hp,
                              "child_1hp"=covg_child_1hp,
+                             "child_3hr"=covg_child_3hr,
                              "child_ipt"=covg_child_6h,
                              "child_none"=covg_child_none)
     covg_adol_3hp <- c(input$covg_adol_2024*input$split_adol_3hp_2024/100, 
@@ -2984,6 +3326,11 @@ server <- function(input, output, session) {
                         input$covg_adol_2026*input$split_adol_1hp_2026/100, 
                         input$covg_adol_2027*input$split_adol_1hp_2027/100, 
                         input$covg_adol_2028*input$split_adol_1hp_2028/100)
+    covg_adol_3hr <- c(input$covg_adol_2024*input$split_adol_3hr_2024/100, 
+                       input$covg_adol_2025*input$split_adol_3hr_2025/100, 
+                       input$covg_adol_2026*input$split_adol_3hr_2026/100, 
+                       input$covg_adol_2027*input$split_adol_3hr_2027/100, 
+                       input$covg_adol_2028*input$split_adol_3hr_2028/100)
     covg_adol_6h <- c(input$covg_adol_2024*input$split_adol_6h_2024/100, 
                        input$covg_adol_2025*input$split_adol_6h_2025/100, 
                        input$covg_adol_2026*input$split_adol_6h_2026/100, 
@@ -2996,6 +3343,7 @@ server <- function(input, output, session) {
                          input$covg_adol_2028*input$split_adol_none_2028/100)
     covg_adol <- data.frame("year"=2024:2028,
                              "adol_3hp"=covg_adol_3hp,
+                            "adol_3hr"=covg_adol_3hr,
                              "adol_1hp"=covg_adol_1hp,
                              "adol_ipt"=covg_adol_6h,
                              "adol_none"=covg_adol_none)
@@ -3009,6 +3357,11 @@ server <- function(input, output, session) {
                         input$covg_adult_2026*input$split_adult_1hp_2026/100, 
                         input$covg_adult_2027*input$split_adult_1hp_2027/100, 
                         input$covg_adult_2028*input$split_adult_1hp_2028/100)
+    covg_adult_3hr <- c(input$covg_adult_2024*input$split_adult_3hr_2024/100, 
+                        input$covg_adult_2025*input$split_adult_3hr_2025/100, 
+                        input$covg_adult_2026*input$split_adult_3hr_2026/100, 
+                        input$covg_adult_2027*input$split_adult_3hr_2027/100, 
+                        input$covg_adult_2028*input$split_adult_3hr_2028/100)
     covg_adult_6h <- c(input$covg_adult_2024*input$split_adult_6h_2024/100, 
                        input$covg_adult_2025*input$split_adult_6h_2025/100, 
                        input$covg_adult_2026*input$split_adult_6h_2026/100, 
@@ -3022,6 +3375,7 @@ server <- function(input, output, session) {
     covg_adult <- data.frame("year"=2024:2028,
                              "adult_3hp"=covg_adult_3hp,
                              "adult_1hp"=covg_adult_1hp,
+                             "adult_3hr"=covg_adult_3hr,
                              "adult_ipt"=covg_adult_6h,
                              "adult_none"=covg_adult_none)
     contacts_output <- run_model_contacts(input$country, NULL, NULL, NULL,
@@ -3062,11 +3416,9 @@ server <- function(input, output, session) {
          "child_output"=child_output, 
          "adol_output"=adol_output, 
          "adult_output"=adult_output, 
-         #"plhiv_covg_table"=plhiv_covg_table,
          "out_sum"=out_sum)
     
   }, ignoreNULL=FALSE)
-  #output$plhiv_covg_table <- renderDT({datatable(rv()[["plhiv_covg_table"]], editable=TRUE)})
   output$table <- renderTable({rv()[["out_sum"]]})
   output$downloadData <- downloadHandler(
     filename=function() {
@@ -3230,6 +3582,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
@@ -3255,6 +3609,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
@@ -3282,6 +3638,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
@@ -3309,6 +3667,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       layout(yaxis=list(title="Annual Costs (USD)"),
@@ -3334,6 +3694,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
@@ -3361,6 +3723,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
@@ -3388,6 +3752,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
@@ -3415,6 +3781,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
@@ -3442,6 +3810,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
@@ -3469,6 +3839,8 @@ server <- function(input, output, session) {
                 color=I(cost_colors["cost_3hp", "colors"])) %>%
       add_trace(y=~round(cost_1hp,-4), name=cost_colors["cost_1hp", "labels"], 
                 color=I(cost_colors["cost_1hp", "colors"])) %>%
+      add_trace(y=~round(cost_3hr,-4), name=cost_colors["cost_3hr", "labels"], 
+                color=I(cost_colors["cost_3hr", "colors"])) %>%
       add_trace(y=~round(cost_tox,-4), name=cost_colors["cost_tox", "labels"], 
                 color=I(cost_colors["cost_tox", "colors"])) %>%
       add_trace(y=~round(cost_contact,-4), name=cost_colors["cost_contact", "labels"], 
