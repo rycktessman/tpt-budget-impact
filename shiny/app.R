@@ -740,7 +740,7 @@ model_tb_plhiv <- function(d, d_ltbi, d_covg, d_ltbi_covg, params) {
                                  cases_est, notif_est,
                                  cases_ltfu, notif_ltfu,
                                  #TPT outcomes (to calculate costs)
-                                 initiate_ipt_est, initiate_3hp_est, initiate_1hp_est, initiate_3hp_est,
+                                 initiate_ipt_est, initiate_3hp_est, initiate_1hp_est, initiate_3hr_est,
                                  tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est, tox_nohosp_3hr_est,
                                  tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est, tox_hosp_3hr_est,
                                  complete_ipt_est, complete_3hp_est, complete_1hp_est, complete_3hr_est,
@@ -1905,7 +1905,7 @@ scenarios <- c("TPT Scaleup", "Comparator (no TPT)")
 cost_colors <- data.frame(row.names=c("cost_tx", "cost_art", "cost_contact", 
                                       "cost_3hp", "cost_1hp", "cost_3hr",
                                       "cost_ipt", "cost_tox"),
-                          colors=brewer.pal(n=7, name="Set2"),
+                          colors=brewer.pal(n=8, name="Set2"),
                           labels=c("TB treatment", "ART",  "Contact investigation & diagnosis", 
                                    "3HP drugs & clinic visits", "1HP drugs & clinic visits",
                                    "3HR drugs & clinic visits",
@@ -2025,19 +2025,19 @@ ui <- navbarPage(
                inputId="covg_plhiv_2024",
                label=strong("Total TPT Coverage (%)"),
                value=50)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_plhiv_3hp_2024", 
                label=em(strong("Percent 3HP")),
                value=100)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_plhiv_1hp_2024",
                label=em(strong("Percent 1HP")),
                value=0)),
-      column(2, numericInput(
+      column(1, numericInput(
         inputId="split_plhiv_3hr_2024",
         label=em(strong("Percent 3HR")),
         value=0)),
-      column(2, numericInput(
+      column(1, numericInput(
                inputId="split_plhiv_6h_2024",
                label=em(strong("Percent 6H")),
                value=0)),
@@ -2049,19 +2049,19 @@ ui <- navbarPage(
                inputId="covg_plhiv_2025",
                label=NULL,
                value=50)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_plhiv_3hp_2025",
                label=NULL,
                value=100)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_plhiv_1hp_2025",
                label=NULL,
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_plhiv_3hr_2025",
                label=NULL,
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_plhiv_6h_2025",
                label=NULL,
                value=0)),
@@ -2073,19 +2073,19 @@ ui <- navbarPage(
                    inputId="covg_plhiv_2026",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_3hp_2026",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_1hp_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_3hr_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_6h_2026", 
                    label=NULL,
                    value=0)),
@@ -2097,19 +2097,19 @@ ui <- navbarPage(
                    inputId="covg_plhiv_2027",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_3hp_2027",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_1hp_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_3hr_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_6h_2027",
                    label=NULL,
                    value=0)),
@@ -2121,19 +2121,19 @@ ui <- navbarPage(
                    inputId="covg_plhiv_2028",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_3hp_2028",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_1hp_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_3hr_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_plhiv_6h_2028",
                    label=NULL,
                    value=0)),
@@ -2145,19 +2145,19 @@ ui <- navbarPage(
                inputId="covg_child_2024",
                label=strong("Total Coverage (%)"),
                value=50)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_child_3hp_2024", 
                label=em(strong("Percent 3HP")),
                value=100)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_child_1hp_2024",
                label=em(strong("Percent 1HP")),
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_child_3hr_2024",
-               label=em(strong("Percent 1HP")),
+               label=em(strong("Percent 3HR")),
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_child_6h_2024",
                label=em(strong("Percent 6H")),
                value=0)),
@@ -2165,7 +2165,7 @@ ui <- navbarPage(
                inputId="split_child_none_2024",
                label=em(strong("Percent No TPT")),
                value=0)),
-             column(1, textOutput('split_child_2024'))),
+             column(2, textOutput('split_child_2024'))),
     div(style="margin-top:-1em", 
         fluidRow(tags$style("#split_child_2025 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2025 </b> </p>')),
@@ -2173,19 +2173,19 @@ ui <- navbarPage(
                    inputId="covg_child_2025",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hp_2025",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_1hp_2025",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hr_2025",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_6h_2025",
                    label=NULL,
                    value=0)),
@@ -2193,7 +2193,7 @@ ui <- navbarPage(
                    inputId="split_child_none_2025",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_child_2025')))),
+                 column(2, textOutput('split_child_2025')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_child_2026 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2026 </b> </p>')),
@@ -2201,19 +2201,19 @@ ui <- navbarPage(
                    inputId="covg_child_2026",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hp_2026",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_1hp_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hr_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_6h_2026", 
                    label=NULL,
                    value=0)),
@@ -2221,7 +2221,7 @@ ui <- navbarPage(
                    inputId="split_child_none_2026",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_child_2026')))),
+                 column(2, textOutput('split_child_2026')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_child_2027 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2027 </b> </p>')),
@@ -2229,19 +2229,19 @@ ui <- navbarPage(
                    inputId="covg_child_2027",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hp_2027",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_1hp_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hr_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_6h_2027",
                    label=NULL,
                    value=0)),
@@ -2249,7 +2249,7 @@ ui <- navbarPage(
                    inputId="split_child_none_2027",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_child_2027')))),
+                 column(2, textOutput('split_child_2027')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_child_2028 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2028 </b> </p>')),
@@ -2257,19 +2257,19 @@ ui <- navbarPage(
                    inputId="covg_child_2028",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hp_2028",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_1hp_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_3hr_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_child_6h_2028",
                    label=NULL,
                    value=0)),
@@ -2277,7 +2277,7 @@ ui <- navbarPage(
                    inputId="split_child_none_2028",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_child_2028')))),
+                 column(2, textOutput('split_child_2028')))),
     h4("Coverage for Contacts 5-14"),
     fluidRow(tags$style("#split_adol_2024 {color:red;}"),
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
@@ -2285,19 +2285,19 @@ ui <- navbarPage(
                inputId="covg_adol_2024",
                label=strong("Total Coverage (%)"),
                value=50)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adol_3hp_2024", 
                label=em(strong("Percent 3HP")),
                value=100)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adol_1hp_2024",
                label=em(strong("Percent 1HP")),
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adol_3hr_2024",
-               label=em(strong("Percent 1HP")),
+               label=em(strong("Percent 3HR")),
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adol_6h_2024",
                label=em(strong("Percent 6H")),
                value=0)),
@@ -2305,7 +2305,7 @@ ui <- navbarPage(
                inputId="split_adol_none_2024",
                label=em(strong("Percent No TPT")),
                value=0)),
-             column(1, textOutput('split_adol_2024'))),
+             column(2, textOutput('split_adol_2024'))),
     div(style="margin-top:-1em", 
         fluidRow(tags$style("#split_adol_2025 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2025 </b> </p>')),
@@ -2313,19 +2313,19 @@ ui <- navbarPage(
                    inputId="covg_adol_2025",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hp_2025",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_1hp_2025",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hr_2025",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_6h_2025",
                    label=NULL,
                    value=0)),
@@ -2333,7 +2333,7 @@ ui <- navbarPage(
                    inputId="split_adol_none_2025",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adol_2025')))),
+                 column(2, textOutput('split_adol_2025')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_adol_2026 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2026 </b> </p>')),
@@ -2341,19 +2341,19 @@ ui <- navbarPage(
                    inputId="covg_adol_2026",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hp_2026",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_1hp_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hr_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_6h_2026", 
                    label=NULL,
                    value=0)),
@@ -2361,7 +2361,7 @@ ui <- navbarPage(
                    inputId="split_adol_none_2026",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adol_2026')))),
+                 column(2, textOutput('split_adol_2026')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_adol_2027 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2027 </b> </p>')),
@@ -2369,19 +2369,19 @@ ui <- navbarPage(
                    inputId="covg_adol_2027",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hp_2027",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_1hp_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hr_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_6h_2027",
                    label=NULL,
                    value=0)),
@@ -2389,7 +2389,7 @@ ui <- navbarPage(
                    inputId="split_adol_none_2027",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adol_2027')))),
+                 column(2, textOutput('split_adol_2027')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_adol_2028 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2028 </b> </p>')),
@@ -2397,19 +2397,19 @@ ui <- navbarPage(
                    inputId="covg_adol_2028",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hp_2028",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_1hp_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_3hr_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adol_6h_2028",
                    label=NULL,
                    value=0)),
@@ -2417,7 +2417,7 @@ ui <- navbarPage(
                    inputId="split_adol_none_2028",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adol_2028')))),
+                 column(2, textOutput('split_adol_2028')))),
     h4("Coverage for Contacts 15+"),
     fluidRow(tags$style("#split_adult_2024 {color:red;}"),
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
@@ -2425,19 +2425,19 @@ ui <- navbarPage(
                inputId="covg_adult_2024",
                label=strong("Total Coverage (%)"),
                value=50)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adult_3hp_2024", 
                label=em(strong("Percent 3HP")),
                value=100)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adult_1hp_2024",
                label=em(strong("Percent 1HP")),
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adult_3hr_2024",
-               label=em(strong("Percent 1HP")),
+               label=em(strong("Percent 3HR")),
                value=0)),
-             column(2, numericInput(
+             column(1, numericInput(
                inputId="split_adult_6h_2024",
                label=em(strong("Percent 6H")),
                value=0)),
@@ -2445,7 +2445,7 @@ ui <- navbarPage(
                inputId="split_adult_none_2024",
                label=em(strong("Percent No TPT")),
                value=0)),
-             column(1, textOutput('split_adult_2024'))),
+             column(2, textOutput('split_adult_2024'))),
     div(style="margin-top:-1em", 
         fluidRow(tags$style("#split_adult_2025 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2025 </b> </p>')),
@@ -2453,19 +2453,19 @@ ui <- navbarPage(
                    inputId="covg_adult_2025",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hp_2025",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_1hp_2025",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hr_2025",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_6h_2025",
                    label=NULL,
                    value=0)),
@@ -2473,7 +2473,7 @@ ui <- navbarPage(
                    inputId="split_adult_none_2025",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adult_2025')))),
+                 column(2, textOutput('split_adult_2025')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_adult_2026 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2026 </b> </p>')),
@@ -2481,19 +2481,19 @@ ui <- navbarPage(
                    inputId="covg_adult_2026",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hp_2026",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_1hp_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hr_2026",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_6h_2026", 
                    label=NULL,
                    value=0)),
@@ -2501,7 +2501,7 @@ ui <- navbarPage(
                    inputId="split_adult_none_2026",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adult_2026')))),
+                 column(2, textOutput('split_adult_2026')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_adult_2027 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2027 </b> </p>')),
@@ -2509,19 +2509,19 @@ ui <- navbarPage(
                    inputId="covg_adult_2027",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hp_2027",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_1hp_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hr_2027",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_6h_2027",
                    label=NULL,
                    value=0)),
@@ -2529,7 +2529,7 @@ ui <- navbarPage(
                    inputId="split_adult_none_2027",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adult_2027')))),
+                 column(2, textOutput('split_adult_2027')))),
     div(style="margin-top:-0.5em", 
         fluidRow(tags$style("#split_adult_2028 {color:red;}"),
                  column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2028 </b> </p>')),
@@ -2537,19 +2537,19 @@ ui <- navbarPage(
                    inputId="covg_adult_2028",
                    label=NULL,
                    value=50)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hp_2028",
                    label=NULL,
                    value=100)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_1hp_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_3hr_2028",
                    label=NULL,
                    value=0)),
-                 column(2, numericInput(
+                 column(1, numericInput(
                    inputId="split_adult_6h_2028",
                    label=NULL,
                    value=0)),
@@ -2557,7 +2557,7 @@ ui <- navbarPage(
                    inputId="split_adult_none_2028",
                    label=NULL,
                    value=0)),
-                 column(1, textOutput('split_adult_2028'))))
+                 column(2, textOutput('split_adult_2028'))))
   ),
   tabPanel(
     title="Other Options",
@@ -2615,86 +2615,89 @@ ui <- navbarPage(
         value=pop_calcs %>% filter(country==countries[[1]] & year==2028) %>% pull(tb_notif_new)))
     ),
     h4("TPT Acceptance & Refusal"),
-    fluidRow(column(2, numericInput(
+    fluidRow(column(3, numericInput(
       inputId="initiate_plhiv",
       label="TPT Acceptance, PLHIV (%)",
       value=73.5)),
-      column(2, numericInput(
+      column(3, numericInput(
         inputId="initiate_child",
         label="TPT Acceptance, Contacts < 5 (%)",
         value=73.5)),
-      column(2, numericInput(
+      column(3, numericInput(
         inputId="initiate_adol",
         label="TPT Acceptance, Contacts 5-14 (%)",
         value=73.5)),
-      column(2, numericInput(
+      column(3, numericInput(
         inputId="initiate_adult",
         label="TPT Acceptance, Contacts 15+ (%)",
         value=73.5))
     ),
     h4("TPT Drug Costs (all in USD per full course)"),
     fluidRow(
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_3hp_plhiv",
         label="3HP cost per PLHIV",
         value=14.25)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_3hp_child",
         label="3HP cost per contact < 5",
         value=6)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_3hp_adol",
         label="3HP cost per contact 5-14",
         value=12)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_3hp_adult",
         label="3HP cost per contact 15+",
-        value=14.25)),
-      column(1, numericInput(
+        value=14.25))),
+    fluidRow(
+      column(3, numericInput(
         inputId="c_1hp_plhiv",
         label="1HP cost per PLHIV",
         value=22)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_1hp_child",
         label="1HP cost per contact < 5",
         value=22)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_1hp_adol",
         label="1HP cost per contact 5-14",
         value=22)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_1hp_adult",
         label="1HP cost per contact 15+",
-        value=22)),
-      column(1, numericInput(
+        value=22))),
+    fluidRow(
+      column(3, numericInput(
         inputId="c_3hr_plhiv",
         label="3HR cost per PLHIV",
         value=38)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_3hr_child",
         label="3HR cost per contact < 5",
         value=19)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_3hr_adol",
         label="3HR cost per contact 5-14",
         value=38)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_3hr_adult",
         label="3HR cost per contact 15+",
-        value=38)),
-      column(1, numericInput(
+        value=38))),
+    fluidRow(
+      column(3, numericInput(
         inputId="c_6h_plhiv",
         label="6H cost per PLHIV",
         value=7.2)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_6h_child",
         label="6H cost per contact < 5",
         value=3.6)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_6h_adol",
         label="6H cost per contact 5-14",
         value=5.4)),
-      column(1, numericInput(
+      column(3, numericInput(
         inputId="c_6h_adult",
         label="6H cost per contact 15+",
         value=7.2))
@@ -3386,32 +3389,28 @@ server <- function(input, output, session) {
     adult_output <- contacts_output$adult
     out_sum <- bind_rows(plhiv_output %>% ungroup() %>% 
                               mutate(pop="PLHIV",
-                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_plhiv, "None"),
                                      coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_plhiv), 0),
                                      year=as.integer(year)) %>%
                               select(country, pop, year, scenario, 
-                                     regimen,coverage, starts_with("cost")),
+                                     coverage, starts_with("cost")),
                             child_output %>% ungroup() %>% 
                               mutate(pop="Contacts < 5",
-                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_child, "None"),
                                      coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_child), 0),
                                      year=as.integer(year)) %>%
                               select(country, pop, year, scenario, 
-                                     regimen,coverage, starts_with("cost")),
+                                     coverage, starts_with("cost")),
                             adol_output %>% ungroup() %>% 
                               mutate(pop="Contacts 5-14",
-                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_adol, "None"),
                                      coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_adol), 0),
                                      year=as.integer(year)) %>%
                               select(country, pop, year, scenario, 
-                                     regimen,coverage, starts_with("cost")),
+                                     coverage, starts_with("cost")),
                             adult_output %>% ungroup() %>% 
                               mutate(pop="Contacts 15+",
-                                     regimen=if_else(scenario=="TPT Scaleup", input$tpt_adult, "None"),
                                      coverage=if_else(scenario=="TPT Scaleup", as.double(input$covg_adult),0),
                                      year=as.integer(year)) %>%
                               select(country, pop, year, scenario, 
-                                     regimen,coverage, starts_with("cost")))
+                                     coverage, starts_with("cost")))
     list("plhiv_output"=plhiv_output, 
          "child_output"=child_output, 
          "adol_output"=adol_output, 
