@@ -4471,6 +4471,12 @@ server <- function(input, output, session) {
                                      year=as.integer(year)) %>%
                               select(country, pop, year, scenario, 
                                      coverage, starts_with("cost")))
+    out_sum <- out_sum %>% arrange(pop, year, scenario) %>%
+      group_by(pop, scenario) %>%
+      mutate(cum_costs=cumsum(costs)) %>%
+      ungroup() %>% group_by(pop, year) %>%
+      mutate(inc_cost=if_else(scenario==scenarios[[2]], 0,
+                              costs[scenario==scenarios[[1]]] - costs[scenario==scenarios[[2]]]))
     list("plhiv_output"=plhiv_output, 
          "child_output"=child_output, 
          "adol_output"=adol_output, 
