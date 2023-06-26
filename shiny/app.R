@@ -1227,8 +1227,8 @@ calc_costs <- function(data, pop_type, costs, cost_impl_input,
 #wrapper function to run the whole model for PLHIV
 #regimen option is obselete
 run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, params, pop_calcs) {
-  policy_horizon <- 5 #for now, implement over 5 years and calculate costs/outcomes over 5 years
-  analytic_horizon <- 5
+  policy_horizon <- 10 #for now, implement over 10 years and calculate costs/outcomes over 10 years
+  analytic_horizon <- 10
   start_yr <- 2024
   end_yr <- start_yr + analytic_horizon - 1
   policy_end_yr <- start_yr + policy_horizon - 1
@@ -1507,8 +1507,8 @@ run_model_plhiv <- function(country_name, regimen, covg, scenarios, options, par
 run_model_contacts <- function(country_name, regimen_child, regimen_adol, regimen_adult,
                                covg_child, covg_adol, covg_adult, scenarios, options,
                                child_params, adol_params, adult_params, pop_calcs) {
-  policy_horizon <- 5 #for now, implement over 5 years and calculate costs/outcomes over 5 years
-  analytic_horizon <- 5
+  policy_horizon <- 10 #for now, implement over 10 years and calculate costs/outcomes over 10 years
+  analytic_horizon <- 10
   start_yr <- 2024
   end_yr <- start_yr + analytic_horizon - 1
   policy_end_yr <- start_yr + policy_horizon - 1
@@ -2138,6 +2138,126 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, textOutput('split_plhiv_2028')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_plhiv_2029 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2029 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_plhiv_2029",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hp_2029",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_1hp_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hr_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_6h_2029",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_plhiv_2029')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_plhiv_2030 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2030 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_plhiv_2030",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hp_2030",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_1hp_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hr_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_6h_2030",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_plhiv_2030')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_plhiv_2031 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2031 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_plhiv_2031",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hp_2031",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_1hp_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hr_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_6h_2031",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_plhiv_2031')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_plhiv_2032 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2032 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_plhiv_2032",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hp_2032",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_1hp_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hr_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_6h_2032",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_plhiv_2032')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_plhiv_2033 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2033 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_plhiv_2033",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hp_2033",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_1hp_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_3hr_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_plhiv_6h_2033",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_plhiv_2033')))),
     h4("Coverage for Contacts < 5"),
     fluidRow(tags$style("#split_child_2024 {color:red;}"),
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
@@ -2278,6 +2398,146 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, textOutput('split_child_2028')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_child_2029 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2029 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_child_2029",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_child_3hp_2029",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_child_1hp_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_3hr_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_6h_2029",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_child_none_2029",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_child_2029')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_child_2030 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2030 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_child_2030",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_child_3hp_2030",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_child_1hp_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_3hr_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_6h_2030",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_child_none_2030",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_child_2030')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_child_2031 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2031 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_child_2031",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_child_3hp_2031",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_child_1hp_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_3hr_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_6h_2031",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_child_none_2031",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_child_2031')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_child_2032 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2032 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_child_2032",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_child_3hp_2032",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_child_1hp_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_3hr_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_6h_2032",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_child_none_2032",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_child_2032')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_child_2033 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2033 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_child_2033",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_child_3hp_2033",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_child_1hp_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_3hr_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_child_6h_2033",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_child_none_2033",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_child_2033')))),
     h4("Coverage for Contacts 5-14"),
     fluidRow(tags$style("#split_adol_2024 {color:red;}"),
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
@@ -2418,6 +2678,146 @@ ui <- navbarPage(
                    label=NULL,
                    value=0)),
                  column(2, textOutput('split_adol_2028')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adol_2029 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2029 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adol_2029",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hp_2029",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adol_1hp_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hr_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_6h_2029",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adol_none_2029",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adol_2029')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adol_2030 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2030 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adol_2030",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hp_2030",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adol_1hp_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hr_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_6h_2030",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adol_none_2030",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adol_2030')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adol_2031 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2031 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adol_2031",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hp_2031",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adol_1hp_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hr_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_6h_2031",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adol_none_2031",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adol_2031')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adol_2032 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2032 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adol_2032",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hp_2032",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adol_1hp_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hr_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_6h_2032",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adol_none_2032",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adol_2032')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adol_2033 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2033 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adol_2033",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hp_2033",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adol_1hp_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_3hr_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adol_6h_2033",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adol_none_2033",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adol_2033')))),
     h4("Coverage for Contacts 15+"),
     fluidRow(tags$style("#split_adult_2024 {color:red;}"),
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
@@ -2557,7 +2957,148 @@ ui <- navbarPage(
                    inputId="split_adult_none_2028",
                    label=NULL,
                    value=0)),
-                 column(2, textOutput('split_adult_2028'))))
+                 column(2, textOutput('split_adult_2028')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adult_2029 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2029 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adult_2029",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hp_2029",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adult_1hp_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hr_2029",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_6h_2029",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adult_none_2029",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adult_2029')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adult_2030 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2030 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adult_2030",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hp_2030",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adult_1hp_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hr_2030",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_6h_2030",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adult_none_2030",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adult_2030')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adult_2031 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2031 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adult_2031",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hp_2031",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adult_1hp_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hr_2031",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_6h_2031",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adult_none_2031",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adult_2031')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adult_2032 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2032 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adult_2032",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hp_2032",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adult_1hp_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hr_2032",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_6h_2032",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adult_none_2032",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adult_2032')))),
+    div(style="margin-top:-0.5em", 
+        fluidRow(tags$style("#split_adult_2033 {color:red;}"),
+                 column(1, HTML('<p style="text-align:right;padding-bottom:8px;padding-top:8px;"> <b> 2033 </b> </p>')),
+                 column(2, numericInput(
+                   inputId="covg_adult_2033",
+                   label=NULL,
+                   value=50)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hp_2033",
+                   label=NULL,
+                   value=100)),
+                 column(1, numericInput(
+                   inputId="split_adult_1hp_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_3hr_2033",
+                   label=NULL,
+                   value=0)),
+                 column(1, numericInput(
+                   inputId="split_adult_6h_2033",
+                   label=NULL,
+                   value=0)),
+                 column(2, numericInput(
+                   inputId="split_adult_none_2033",
+                   label=NULL,
+                   value=0)),
+                 column(2, textOutput('split_adult_2033'))))
+    
   ),
   tabPanel(
     title="Other Options",
@@ -2591,6 +3132,28 @@ ui <- navbarPage(
         label="Newly enrolled PLHIV eligible for TPT, 2028",
         value=pop_calcs %>% filter(country==countries[[1]] & year==2028) %>% pull(plhiv_art_new_lag))),
     ),
+    fluidRow(
+      column(2, numericInput(
+        inputId="new_plhiv_2029",
+        label="Newly enrolled PLHIV eligible for TPT, 2029",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2029) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="new_plhiv_2030",
+        label="Newly enrolled PLHIV eligible for TPT, 2030",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2030) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="new_plhiv_2031",
+        label="Newly enrolled PLHIV eligible for TPT, 2031",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2031) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="new_plhiv_2032",
+        label="Newly enrolled PLHIV eligible for TPT, 2032",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2032) %>% pull(plhiv_art_new_lag))),
+      column(2, numericInput(
+        inputId="new_plhiv_2033",
+        label="Newly enrolled PLHIV eligible for TPT, 2033",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2033) %>% pull(plhiv_art_new_lag))),
+    ),
     h4("Target Population Sizes - Household Contacts"),
     fluidRow(
       column(2, numericInput(
@@ -2613,6 +3176,28 @@ ui <- navbarPage(
         inputId="notif_2028",
         label="Notified TB patients, 2028",
         value=pop_calcs %>% filter(country==countries[[1]] & year==2028) %>% pull(tb_notif_new)))
+    ),
+    fluidRow(
+      column(2, numericInput(
+        inputId="notif_2029",
+        label="Notified TB patients, 2029",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2029) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2030",
+        label="Notified TB patients, 2030",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2030) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2031",
+        label="Notified TB patients, 2031",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2031) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2032",
+        label="Notified TB patients, 2032",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2032) %>% pull(tb_notif_new))),
+      column(2, numericInput(
+        inputId="notif_2033",
+        label="Notified TB patients, 2033",
+        value=pop_calcs %>% filter(country==countries[[1]] & year==2033) %>% pull(tb_notif_new)))
     ),
     h4("TPT Acceptance & Refusal"),
     fluidRow(column(3, numericInput(
@@ -2787,21 +3372,41 @@ server <- function(input, output, session) {
   iv$add_rule("covg_plhiv_2026", sv_between(0, 100))
   iv$add_rule("covg_plhiv_2027", sv_between(0, 100))
   iv$add_rule("covg_plhiv_2028", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2029", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2030", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2031", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2032", sv_between(0, 100))
+  iv$add_rule("covg_plhiv_2033", sv_between(0, 100))
   iv$add_rule("covg_child_2024", sv_between(0, 100))
   iv$add_rule("covg_child_2025", sv_between(0, 100))
   iv$add_rule("covg_child_2026", sv_between(0, 100))
   iv$add_rule("covg_child_2027", sv_between(0, 100))
   iv$add_rule("covg_child_2028", sv_between(0, 100))
+  iv$add_rule("covg_child_2029", sv_between(0, 100))
+  iv$add_rule("covg_child_2030", sv_between(0, 100))
+  iv$add_rule("covg_child_2031", sv_between(0, 100))
+  iv$add_rule("covg_child_2032", sv_between(0, 100))
+  iv$add_rule("covg_child_2033", sv_between(0, 100))
   iv$add_rule("covg_adol_2024", sv_between(0, 100))
   iv$add_rule("covg_adol_2025", sv_between(0, 100))
   iv$add_rule("covg_adol_2026", sv_between(0, 100))
   iv$add_rule("covg_adol_2027", sv_between(0, 100))
   iv$add_rule("covg_adol_2028", sv_between(0, 100))
+  iv$add_rule("covg_adol_2029", sv_between(0, 100))
+  iv$add_rule("covg_adol_2030", sv_between(0, 100))
+  iv$add_rule("covg_adol_2031", sv_between(0, 100))
+  iv$add_rule("covg_adol_2032", sv_between(0, 100))
+  iv$add_rule("covg_adol_2033", sv_between(0, 100))
   iv$add_rule("covg_adult_2024", sv_between(0, 100))
   iv$add_rule("covg_adult_2025", sv_between(0, 100))
   iv$add_rule("covg_adult_2026", sv_between(0, 100))
   iv$add_rule("covg_adult_2027", sv_between(0, 100))
   iv$add_rule("covg_adult_2028", sv_between(0, 100))
+  iv$add_rule("covg_adult_2029", sv_between(0, 100))
+  iv$add_rule("covg_adult_2030", sv_between(0, 100))
+  iv$add_rule("covg_adult_2031", sv_between(0, 100))
+  iv$add_rule("covg_adult_2032", sv_between(0, 100))
+  iv$add_rule("covg_adult_2033", sv_between(0, 100))
   iv$add_rule("initiate_plhiv", sv_between(0.1, 100))
   iv$add_rule("initiate_child", sv_between(0.1, 100))
   iv$add_rule("initiate_adol", sv_between(0.1, 100))
@@ -2841,6 +3446,41 @@ server <- function(input, output, session) {
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
+  output$split_plhiv_2029 <- renderText({
+    out <- ifelse(input$split_plhiv_3hp_2029 + input$split_plhiv_1hp_2029 + 
+                    input$split_plhiv_3hr_2029 + input$split_plhiv_6h_2029!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_plhiv_2030 <- renderText({
+    out <- ifelse(input$split_plhiv_3hp_2030 + input$split_plhiv_1hp_2030 + 
+                    input$split_plhiv_3hr_2030 + input$split_plhiv_6h_2030!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_plhiv_2031 <- renderText({
+    out <- ifelse(input$split_plhiv_3hp_2031 + input$split_plhiv_1hp_2031 + 
+                    input$split_plhiv_3hr_2031 + input$split_plhiv_6h_2031!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_plhiv_2032 <- renderText({
+    out <- ifelse(input$split_plhiv_3hp_2032 + input$split_plhiv_1hp_2032 + 
+                    input$split_plhiv_3hr_2032 + input$split_plhiv_6h_2032!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_plhiv_2033 <- renderText({
+    out <- ifelse(input$split_plhiv_3hp_2033 + input$split_plhiv_1hp_2033 + 
+                    input$split_plhiv_3hr_2033 + input$split_plhiv_6h_2033!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
   output$split_child_2024 <- renderText({
     out <- ifelse(input$split_child_3hp_2024 + input$split_child_1hp_2024 + input$split_child_3hr_2024 +
                     input$split_child_6h_2024 + input$split_child_none_2024!=100,
@@ -2872,6 +3512,41 @@ server <- function(input, output, session) {
   output$split_child_2028 <- renderText({
     out <- ifelse(input$split_child_3hp_2028 + input$split_child_1hp_2028 + input$split_child_3hr_2028 +
                     input$split_child_6h_2028 + input$split_child_none_2028!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_child_2029 <- renderText({
+    out <- ifelse(input$split_child_3hp_2029 + input$split_child_1hp_2029 + 
+                    input$split_child_3hr_2029 + input$split_child_6h_2029 + input$split_child_none_2029!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_child_2030 <- renderText({
+    out <- ifelse(input$split_child_3hp_2030 + input$split_child_1hp_2030 + 
+                    input$split_child_3hr_2030 + input$split_child_6h_2030 + input$split_child_none_2030!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_child_2031 <- renderText({
+    out <- ifelse(input$split_child_3hp_2031 + input$split_child_1hp_2031 + 
+                    input$split_child_3hr_2031 + input$split_child_6h_2031 + input$split_child_none_2031!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_child_2032 <- renderText({
+    out <- ifelse(input$split_child_3hp_2032 + input$split_child_1hp_2032 + 
+                    input$split_child_3hr_2032 + input$split_child_6h_2032 + input$split_child_none_2032!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_child_2033 <- renderText({
+    out <- ifelse(input$split_child_3hp_2033 + input$split_child_1hp_2033 + 
+                    input$split_child_3hr_2033 + input$split_child_6h_2033 + input$split_child_none_2033!=100,
                   "error", "")
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
@@ -2911,6 +3586,41 @@ server <- function(input, output, session) {
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
+  output$split_adol_2029 <- renderText({
+    out <- ifelse(input$split_adol_3hp_2029 + input$split_adol_1hp_2029 + 
+                    input$split_adol_3hr_2029 + input$split_adol_6h_2029 + input$split_adol_none_2029!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adol_2030 <- renderText({
+    out <- ifelse(input$split_adol_3hp_2030 + input$split_adol_1hp_2030 + 
+                    input$split_adol_3hr_2030 + input$split_adol_6h_2030 + input$split_adol_none_2030!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adol_2031 <- renderText({
+    out <- ifelse(input$split_adol_3hp_2031 + input$split_adol_1hp_2031 + 
+                    input$split_adol_3hr_2031 + input$split_adol_6h_2031 + input$split_adol_none_2031!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adol_2032 <- renderText({
+    out <- ifelse(input$split_adol_3hp_2032 + input$split_adol_1hp_2032 + 
+                    input$split_adol_3hr_2032 + input$split_adol_6h_2032 + input$split_adol_none_2032!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adol_2033 <- renderText({
+    out <- ifelse(input$split_adol_3hp_2033 + input$split_adol_1hp_2033 + 
+                    input$split_adol_3hr_2033 + input$split_adol_6h_2033 + input$split_adol_none_2033!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
   output$split_adult_2024 <- renderText({
     out <- ifelse(input$split_adult_3hp_2024 + input$split_adult_1hp_2024 + input$split_adult_3hr_2024 +
                     input$split_adult_6h_2024 + input$split_adult_none_2024!=100,
@@ -2946,6 +3656,41 @@ server <- function(input, output, session) {
     validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
     out
   })
+  output$split_adult_2029 <- renderText({
+    out <- ifelse(input$split_adult_3hp_2029 + input$split_adult_1hp_2029 + 
+                    input$split_adult_3hr_2029 + input$split_adult_6h_2029 + input$split_adult_none_2029!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adult_2030 <- renderText({
+    out <- ifelse(input$split_adult_3hp_2030 + input$split_adult_1hp_2030 + 
+                    input$split_adult_3hr_2030 + input$split_adult_6h_2030 + input$split_adult_none_2030!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adult_2031 <- renderText({
+    out <- ifelse(input$split_adult_3hp_2031 + input$split_adult_1hp_2031 + 
+                    input$split_adult_3hr_2031 + input$split_adult_6h_2031 + input$split_adult_none_2031!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adult_2032 <- renderText({
+    out <- ifelse(input$split_adult_3hp_2032 + input$split_adult_1hp_2032 + 
+                    input$split_adult_3hr_2032 + input$split_adult_6h_2032 + input$split_adult_none_2032!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
+  output$split_adult_2033 <- renderText({
+    out <- ifelse(input$split_adult_3hp_2033 + input$split_adult_1hp_2033 + 
+                    input$split_adult_3hr_2033 + input$split_adult_6h_2033 + input$split_adult_none_2033!=100,
+                  "error", "")
+    validate(need(out=="", "Error: Split across TPT regimens must sum to 100%"))
+    out
+  })
   iv$enable()
   observeEvent(input$country, {
     updateNumericInput(session, "c_contact", 
@@ -2966,11 +3711,21 @@ server <- function(input, output, session) {
     updateNumericInput(session, "new_plhiv_2026", value=round(pop_calcs %>% filter(country==input$country & year==2026) %>% pull(plhiv_art_new_lag)))
     updateNumericInput(session, "new_plhiv_2027", value=round(pop_calcs %>% filter(country==input$country & year==2027) %>% pull(plhiv_art_new_lag)))
     updateNumericInput(session, "new_plhiv_2028", value=round(pop_calcs %>% filter(country==input$country & year==2028) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2029", value=round(pop_calcs %>% filter(country==input$country & year==2029) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2030", value=round(pop_calcs %>% filter(country==input$country & year==2030) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2031", value=round(pop_calcs %>% filter(country==input$country & year==2031) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2032", value=round(pop_calcs %>% filter(country==input$country & year==2032) %>% pull(plhiv_art_new_lag)))
+    updateNumericInput(session, "new_plhiv_2033", value=round(pop_calcs %>% filter(country==input$country & year==2033) %>% pull(plhiv_art_new_lag)))
     updateNumericInput(session, "notif_2024", value=round(pop_calcs %>% filter(country==input$country & year==2024) %>% pull(tb_notif_new)))
     updateNumericInput(session, "notif_2025", value=round(pop_calcs %>% filter(country==input$country & year==2025) %>% pull(tb_notif_new)))
     updateNumericInput(session, "notif_2026", value=round(pop_calcs %>% filter(country==input$country & year==2026) %>% pull(tb_notif_new)))
     updateNumericInput(session, "notif_2027", value=round(pop_calcs %>% filter(country==input$country & year==2027) %>% pull(tb_notif_new)))
     updateNumericInput(session, "notif_2028", value=round(pop_calcs %>% filter(country==input$country & year==2028) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2029", value=round(pop_calcs %>% filter(country==input$country & year==2029) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2030", value=round(pop_calcs %>% filter(country==input$country & year==2030) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2031", value=round(pop_calcs %>% filter(country==input$country & year==2031) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2032", value=round(pop_calcs %>% filter(country==input$country & year==2032) %>% pull(tb_notif_new)))
+    updateNumericInput(session, "notif_2033", value=round(pop_calcs %>% filter(country==input$country & year==2033) %>% pull(tb_notif_new)))
   })
   observeEvent(input$covg_plhiv, {
     updateNumericInput(session, "covg_plhiv_2024", value=input$covg_plhiv)
@@ -2978,6 +3733,11 @@ server <- function(input, output, session) {
     updateNumericInput(session, "covg_plhiv_2026", value=input$covg_plhiv)
     updateNumericInput(session, "covg_plhiv_2027", value=input$covg_plhiv)
     updateNumericInput(session, "covg_plhiv_2028", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2029", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2030", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2031", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2032", value=input$covg_plhiv)
+    updateNumericInput(session, "covg_plhiv_2033", value=input$covg_plhiv)
   })
   observeEvent(input$covg_child, {
     updateNumericInput(session, "covg_child_2024", value=input$covg_child)
@@ -2985,6 +3745,11 @@ server <- function(input, output, session) {
     updateNumericInput(session, "covg_child_2026", value=input$covg_child)
     updateNumericInput(session, "covg_child_2027", value=input$covg_child)
     updateNumericInput(session, "covg_child_2028", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2029", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2030", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2031", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2032", value=input$covg_child)
+    updateNumericInput(session, "covg_child_2033", value=input$covg_child)
   })
   observeEvent(input$covg_adol, {
     updateNumericInput(session, "covg_adol_2024", value=input$covg_adol)
@@ -2992,6 +3757,11 @@ server <- function(input, output, session) {
     updateNumericInput(session, "covg_adol_2026", value=input$covg_adol)
     updateNumericInput(session, "covg_adol_2027", value=input$covg_adol)
     updateNumericInput(session, "covg_adol_2028", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2029", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2030", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2031", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2032", value=input$covg_adol)
+    updateNumericInput(session, "covg_adol_2033", value=input$covg_adol)
   })
   observeEvent(input$covg_adult, {
     updateNumericInput(session, "covg_adult_2024", value=input$covg_adult)
@@ -2999,6 +3769,11 @@ server <- function(input, output, session) {
     updateNumericInput(session, "covg_adult_2026", value=input$covg_adult)
     updateNumericInput(session, "covg_adult_2027", value=input$covg_adult)
     updateNumericInput(session, "covg_adult_2028", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2029", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2030", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2031", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2032", value=input$covg_adult)
+    updateNumericInput(session, "covg_adult_2033", value=input$covg_adult)
   })
   observeEvent(input$tpt_plhiv, {
     updateNumericInput(session, "split_plhiv_3hp_2024",
@@ -3011,6 +3786,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_plhiv=="3HP")*100)
     updateNumericInput(session, "split_plhiv_3hp_2028",
                        value=(input$tpt_plhiv=="3HP")*100)
+    updateNumericInput(session, "split_plhiv_3hp_2029",
+                       value=(input$tpt_plhiv=="3HP")*100)
+    updateNumericInput(session, "split_plhiv_3hp_2030",
+                       value=(input$tpt_plhiv=="3HP")*100)
+    updateNumericInput(session, "split_plhiv_3hp_2031",
+                       value=(input$tpt_plhiv=="3HP")*100)
+    updateNumericInput(session, "split_plhiv_3hp_2032",
+                       value=(input$tpt_plhiv=="3HP")*100)
+    updateNumericInput(session, "split_plhiv_3hp_2033",
+                       value=(input$tpt_plhiv=="3HP")*100)
     updateNumericInput(session, "split_plhiv_1hp_2024",
                        value=(input$tpt_plhiv=="1HP")*100)
     updateNumericInput(session, "split_plhiv_1hp_2025",
@@ -3020,6 +3805,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_plhiv_1hp_2027",
                        value=(input$tpt_plhiv=="1HP")*100)
     updateNumericInput(session, "split_plhiv_1hp_2028",
+                       value=(input$tpt_plhiv=="1HP")*100)
+    updateNumericInput(session, "split_plhiv_1hp_2029",
+                       value=(input$tpt_plhiv=="1HP")*100)
+    updateNumericInput(session, "split_plhiv_1hp_2030",
+                       value=(input$tpt_plhiv=="1HP")*100)
+    updateNumericInput(session, "split_plhiv_1hp_2031",
+                       value=(input$tpt_plhiv=="1HP")*100)
+    updateNumericInput(session, "split_plhiv_1hp_2032",
+                       value=(input$tpt_plhiv=="1HP")*100)
+    updateNumericInput(session, "split_plhiv_1hp_2033",
                        value=(input$tpt_plhiv=="1HP")*100)
     updateNumericInput(session, "split_plhiv_3hr_2024",
                        value=(input$tpt_plhiv=="3HR")*100)
@@ -3031,6 +3826,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_plhiv=="3HR")*100)
     updateNumericInput(session, "split_plhiv_3hr_2028",
                        value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2029",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2030",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2031",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2032",
+                       value=(input$tpt_plhiv=="3HR")*100)
+    updateNumericInput(session, "split_plhiv_3hr_2033",
+                       value=(input$tpt_plhiv=="3HR")*100)
     updateNumericInput(session, "split_plhiv_6h_2024",
                        value=(input$tpt_plhiv=="6H")*100)
     updateNumericInput(session, "split_plhiv_6h_2025",
@@ -3040,6 +3845,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_plhiv_6h_2027",
                        value=(input$tpt_plhiv=="6H")*100)
     updateNumericInput(session, "split_plhiv_6h_2028",
+                       value=(input$tpt_plhiv=="6H")*100)
+    updateNumericInput(session, "split_plhiv_6h_2029",
+                       value=(input$tpt_plhiv=="6H")*100)
+    updateNumericInput(session, "split_plhiv_6h_2030",
+                       value=(input$tpt_plhiv=="6H")*100)
+    updateNumericInput(session, "split_plhiv_6h_2031",
+                       value=(input$tpt_plhiv=="6H")*100)
+    updateNumericInput(session, "split_plhiv_6h_2032",
+                       value=(input$tpt_plhiv=="6H")*100)
+    updateNumericInput(session, "split_plhiv_6h_2033",
                        value=(input$tpt_plhiv=="6H")*100)
   })
   observeEvent(input$tpt_child, {
@@ -3053,6 +3868,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_child=="3HP")*100)
     updateNumericInput(session, "split_child_3hp_2028",
                        value=(input$tpt_child=="3HP")*100)
+    updateNumericInput(session, "split_child_3hp_2029",
+                       value=(input$tpt_child=="3HP")*100)
+    updateNumericInput(session, "split_child_3hp_2030",
+                       value=(input$tpt_child=="3HP")*100)
+    updateNumericInput(session, "split_child_3hp_2031",
+                       value=(input$tpt_child=="3HP")*100)
+    updateNumericInput(session, "split_child_3hp_2032",
+                       value=(input$tpt_child=="3HP")*100)
+    updateNumericInput(session, "split_child_3hp_2033",
+                       value=(input$tpt_child=="3HP")*100)
     updateNumericInput(session, "split_child_1hp_2024",
                        value=(input$tpt_child=="1HP")*100)
     updateNumericInput(session, "split_child_1hp_2025",
@@ -3062,6 +3887,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_child_1hp_2027",
                        value=(input$tpt_child=="1HP")*100)
     updateNumericInput(session, "split_child_1hp_2028",
+                       value=(input$tpt_child=="1HP")*100)
+    updateNumericInput(session, "split_child_1hp_2029",
+                       value=(input$tpt_child=="1HP")*100)
+    updateNumericInput(session, "split_child_1hp_2030",
+                       value=(input$tpt_child=="1HP")*100)
+    updateNumericInput(session, "split_child_1hp_2031",
+                       value=(input$tpt_child=="1HP")*100)
+    updateNumericInput(session, "split_child_1hp_2032",
+                       value=(input$tpt_child=="1HP")*100)
+    updateNumericInput(session, "split_child_1hp_2033",
                        value=(input$tpt_child=="1HP")*100)
     updateNumericInput(session, "split_child_3hr_2024",
                        value=(input$tpt_child=="3HR")*100)
@@ -3073,6 +3908,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_child=="3HR")*100)
     updateNumericInput(session, "split_child_3hr_2028",
                        value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2029",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2030",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2031",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2032",
+                       value=(input$tpt_child=="3HR")*100)
+    updateNumericInput(session, "split_child_3hr_2033",
+                       value=(input$tpt_child=="3HR")*100)
     updateNumericInput(session, "split_child_6h_2024",
                        value=(input$tpt_child=="6H")*100)
     updateNumericInput(session, "split_child_6h_2025",
@@ -3083,6 +3928,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_child=="6H")*100)
     updateNumericInput(session, "split_child_6h_2028",
                        value=(input$tpt_child=="6H")*100)
+    updateNumericInput(session, "split_child_6h_2029",
+                       value=(input$tpt_child=="6H")*100)
+    updateNumericInput(session, "split_child_6h_2030",
+                       value=(input$tpt_child=="6H")*100)
+    updateNumericInput(session, "split_child_6h_2031",
+                       value=(input$tpt_child=="6H")*100)
+    updateNumericInput(session, "split_child_6h_2032",
+                       value=(input$tpt_child=="6H")*100)
+    updateNumericInput(session, "split_child_6h_2033",
+                       value=(input$tpt_child=="6H")*100)
     updateNumericInput(session, "split_child_none_2024",
                        value=(input$tpt_child=="None")*100)
     updateNumericInput(session, "split_child_none_2025",
@@ -3092,6 +3947,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_child_none_2027",
                        value=(input$tpt_child=="None")*100)
     updateNumericInput(session, "split_child_none_2028",
+                       value=(input$tpt_child=="None")*100)
+    updateNumericInput(session, "split_child_none_2029",
+                       value=(input$tpt_child=="None")*100)
+    updateNumericInput(session, "split_child_none_2030",
+                       value=(input$tpt_child=="None")*100)
+    updateNumericInput(session, "split_child_none_2031",
+                       value=(input$tpt_child=="None")*100)
+    updateNumericInput(session, "split_child_none_2032",
+                       value=(input$tpt_child=="None")*100)
+    updateNumericInput(session, "split_child_none_2033",
                        value=(input$tpt_child=="None")*100)
   })
   observeEvent(input$tpt_adol, {
@@ -3105,6 +3970,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_adol=="3HP")*100)
     updateNumericInput(session, "split_adol_3hp_2028",
                        value=(input$tpt_adol=="3HP")*100)
+    updateNumericInput(session, "split_adol_3hp_2029",
+                       value=(input$tpt_adol=="3HP")*100)
+    updateNumericInput(session, "split_adol_3hp_2030",
+                       value=(input$tpt_adol=="3HP")*100)
+    updateNumericInput(session, "split_adol_3hp_2031",
+                       value=(input$tpt_adol=="3HP")*100)
+    updateNumericInput(session, "split_adol_3hp_2032",
+                       value=(input$tpt_adol=="3HP")*100)
+    updateNumericInput(session, "split_adol_3hp_2033",
+                       value=(input$tpt_adol=="3HP")*100)
     updateNumericInput(session, "split_adol_1hp_2024",
                        value=(input$tpt_adol=="1HP")*100)
     updateNumericInput(session, "split_adol_1hp_2025",
@@ -3114,6 +3989,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_adol_1hp_2027",
                        value=(input$tpt_adol=="1HP")*100)
     updateNumericInput(session, "split_adol_1hp_2028",
+                       value=(input$tpt_adol=="1HP")*100)
+    updateNumericInput(session, "split_adol_1hp_2029",
+                       value=(input$tpt_adol=="1HP")*100)
+    updateNumericInput(session, "split_adol_1hp_2030",
+                       value=(input$tpt_adol=="1HP")*100)
+    updateNumericInput(session, "split_adol_1hp_2031",
+                       value=(input$tpt_adol=="1HP")*100)
+    updateNumericInput(session, "split_adol_1hp_2032",
+                       value=(input$tpt_adol=="1HP")*100)
+    updateNumericInput(session, "split_adol_1hp_2033",
                        value=(input$tpt_adol=="1HP")*100)
     updateNumericInput(session, "split_adol_3hr_2024",
                        value=(input$tpt_adol=="3HR")*100)
@@ -3125,6 +4010,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_adol=="3HR")*100)
     updateNumericInput(session, "split_adol_3hr_2028",
                        value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2029",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2030",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2031",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2032",
+                       value=(input$tpt_adol=="3HR")*100)
+    updateNumericInput(session, "split_adol_3hr_2033",
+                       value=(input$tpt_adol=="3HR")*100)
     updateNumericInput(session, "split_adol_6h_2024",
                        value=(input$tpt_adol=="6H")*100)
     updateNumericInput(session, "split_adol_6h_2025",
@@ -3135,6 +4030,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_adol=="6H")*100)
     updateNumericInput(session, "split_adol_6h_2028",
                        value=(input$tpt_adol=="6H")*100)
+    updateNumericInput(session, "split_adol_6h_2029",
+                       value=(input$tpt_adol=="6H")*100)
+    updateNumericInput(session, "split_adol_6h_2030",
+                       value=(input$tpt_adol=="6H")*100)
+    updateNumericInput(session, "split_adol_6h_2031",
+                       value=(input$tpt_adol=="6H")*100)
+    updateNumericInput(session, "split_adol_6h_2032",
+                       value=(input$tpt_adol=="6H")*100)
+    updateNumericInput(session, "split_adol_6h_2033",
+                       value=(input$tpt_adol=="6H")*100)
     updateNumericInput(session, "split_adol_none_2024",
                        value=(input$tpt_adol=="None")*100)
     updateNumericInput(session, "split_adol_none_2025",
@@ -3144,6 +4049,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_adol_none_2027",
                        value=(input$tpt_adol=="None")*100)
     updateNumericInput(session, "split_adol_none_2028",
+                       value=(input$tpt_adol=="None")*100)
+    updateNumericInput(session, "split_adol_none_2029",
+                       value=(input$tpt_adol=="None")*100)
+    updateNumericInput(session, "split_adol_none_2030",
+                       value=(input$tpt_adol=="None")*100)
+    updateNumericInput(session, "split_adol_none_2031",
+                       value=(input$tpt_adol=="None")*100)
+    updateNumericInput(session, "split_adol_none_2032",
+                       value=(input$tpt_adol=="None")*100)
+    updateNumericInput(session, "split_adol_none_2033",
                        value=(input$tpt_adol=="None")*100)
   })
   observeEvent(input$tpt_adult, {
@@ -3157,6 +4072,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_adult=="3HP")*100)
     updateNumericInput(session, "split_adult_3hp_2028",
                        value=(input$tpt_adult=="3HP")*100)
+    updateNumericInput(session, "split_adult_3hp_2029",
+                       value=(input$tpt_adult=="3HP")*100)
+    updateNumericInput(session, "split_adult_3hp_2030",
+                       value=(input$tpt_adult=="3HP")*100)
+    updateNumericInput(session, "split_adult_3hp_2031",
+                       value=(input$tpt_adult=="3HP")*100)
+    updateNumericInput(session, "split_adult_3hp_2032",
+                       value=(input$tpt_adult=="3HP")*100)
+    updateNumericInput(session, "split_adult_3hp_2033",
+                       value=(input$tpt_adult=="3HP")*100)
     updateNumericInput(session, "split_adult_1hp_2024",
                        value=(input$tpt_adult=="1HP")*100)
     updateNumericInput(session, "split_adult_1hp_2025",
@@ -3166,6 +4091,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_adult_1hp_2027",
                        value=(input$tpt_adult=="1HP")*100)
     updateNumericInput(session, "split_adult_1hp_2028",
+                       value=(input$tpt_adult=="1HP")*100)
+    updateNumericInput(session, "split_adult_1hp_2029",
+                       value=(input$tpt_adult=="1HP")*100)
+    updateNumericInput(session, "split_adult_1hp_2030",
+                       value=(input$tpt_adult=="1HP")*100)
+    updateNumericInput(session, "split_adult_1hp_2031",
+                       value=(input$tpt_adult=="1HP")*100)
+    updateNumericInput(session, "split_adult_1hp_2032",
+                       value=(input$tpt_adult=="1HP")*100)
+    updateNumericInput(session, "split_adult_1hp_2033",
                        value=(input$tpt_adult=="1HP")*100)
     updateNumericInput(session, "split_adult_3hr_2024",
                        value=(input$tpt_adult=="3HR")*100)
@@ -3177,6 +4112,16 @@ server <- function(input, output, session) {
                        value=(input$tpt_adult=="3HR")*100)
     updateNumericInput(session, "split_adult_3hr_2028",
                        value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2029",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2030",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2031",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2032",
+                       value=(input$tpt_adult=="3HR")*100)
+    updateNumericInput(session, "split_adult_3hr_2033",
+                       value=(input$tpt_adult=="3HR")*100)
     updateNumericInput(session, "split_adult_6h_2024",
                        value=(input$tpt_adult=="6H")*100)
     updateNumericInput(session, "split_adult_6h_2025",
@@ -3186,6 +4131,16 @@ server <- function(input, output, session) {
     updateNumericInput(session, "split_adult_6h_2027",
                        value=(input$tpt_adult=="6H")*100)
     updateNumericInput(session, "split_adult_6h_2028",
+                       value=(input$tpt_adult=="6H")*100)
+    updateNumericInput(session, "split_adult_6h_2029",
+                       value=(input$tpt_adult=="6H")*100)
+    updateNumericInput(session, "split_adult_6h_2030",
+                       value=(input$tpt_adult=="6H")*100)
+    updateNumericInput(session, "split_adult_6h_2031",
+                       value=(input$tpt_adult=="6H")*100)
+    updateNumericInput(session, "split_adult_6h_2032",
+                       value=(input$tpt_adult=="6H")*100)
+    updateNumericInput(session, "split_adult_6h_2033",
                        value=(input$tpt_adult=="6H")*100)
     updateNumericInput(session, "split_adult_none_2024",
                        value=(input$tpt_adult=="None")*100)
@@ -3197,13 +4152,19 @@ server <- function(input, output, session) {
                        value=(input$tpt_adult=="None")*100)
     updateNumericInput(session, "split_adult_none_2028",
                        value=(input$tpt_adult=="None")*100)
+    updateNumericInput(session, "split_adult_none_2029",
+                       value=(input$tpt_adult=="None")*100)
+    updateNumericInput(session, "split_adult_none_2030",
+                       value=(input$tpt_adult=="None")*100)
+    updateNumericInput(session, "split_adult_none_2031",
+                       value=(input$tpt_adult=="None")*100)
+    updateNumericInput(session, "split_adult_none_2032",
+                       value=(input$tpt_adult=="None")*100)
+    updateNumericInput(session, "split_adult_none_2033",
+                       value=(input$tpt_adult=="None")*100)
   })
   
   rv <- eventReactive(input$go|input$go_advanced|input$go_covg, {
-    #update coverage tables
-    #plhiv_covg_table <- data.frame("TPT_Coverage" = rep(input$, 5), "Proportion_3HP" = rep(100, 5),
-     #                              "Proportion_1HP"=rep(0, 5), "Proportion_6H"=rep(0, 5))
-    #row.names(plhiv_covg_table) <- 2024:2028
     #update parameters
     country_code <- country_info %>% filter(country==input$country) %>% pull(code)
     cost_params <- unlist(cost_params[[country_code]])
@@ -3234,10 +4195,14 @@ server <- function(input, output, session) {
     adol_params$p_initiate <- input$initiate_adol/100
     adult_params$p_initiate <- input$initiate_adult/100
     #update population sizes
-    pop_calcs <- pop_calcs %>% filter(code==country_code & year %in% 2024:2028) %>% #REDUNDANT - FIX LATER
+    pop_calcs <- pop_calcs %>% filter(code==country_code & year %in% 2024:2033) %>% #REDUNDANT - FIX LATER
       mutate(backlog_none=if_else(year==2024, as.double(input$backlog_plhiv_2024), backlog_none),
-             plhiv_art_new_lag=c(input$new_plhiv_2024, input$new_plhiv_2025, input$new_plhiv_2026, input$new_plhiv_2027, input$new_plhiv_2028),
-             tb_notif_new=c(input$notif_2024, input$notif_2025, input$notif_2026, input$notif_2027, input$notif_2028))
+             plhiv_art_new_lag=c(input$new_plhiv_2024, input$new_plhiv_2025, input$new_plhiv_2026, 
+                                 input$new_plhiv_2027, input$new_plhiv_2028, input$new_plhiv_2029,
+                                 input$new_plhiv_2030, input$new_plhiv_2031, input$new_plhiv_2032,
+                                 input$new_plhiv_2033),
+             tb_notif_new=c(input$notif_2024, input$notif_2025, input$notif_2026, input$notif_2027, input$notif_2028,
+                            input$notif_2029, input$notif_2030, input$notif_2031, input$notif_2032, input$notif_2033))
     #run model for PLHIV
     plhiv_params <- c(plhiv_params, other_params, cost_params, 
                       "p_ltbi"=ltbi_params %>% filter(iso3==country_code) %>% pull(ltbi_prev), 
@@ -3248,22 +4213,42 @@ server <- function(input, output, session) {
                         input$covg_plhiv_2025*input$split_plhiv_3hp_2025/100, 
                         input$covg_plhiv_2026*input$split_plhiv_3hp_2026/100, 
                         input$covg_plhiv_2027*input$split_plhiv_3hp_2027/100, 
-                        input$covg_plhiv_2028*input$split_plhiv_3hp_2028/100)
+                        input$covg_plhiv_2028*input$split_plhiv_3hp_2028/100,
+                        input$covg_plhiv_2029*input$split_plhiv_3hp_2029/100, 
+                        input$covg_plhiv_2030*input$split_plhiv_3hp_2030/100, 
+                        input$covg_plhiv_2031*input$split_plhiv_3hp_2031/100, 
+                        input$covg_plhiv_2032*input$split_plhiv_3hp_2032/100, 
+                        input$covg_plhiv_2033*input$split_plhiv_3hp_2033/100)
     covg_plhiv_1hp <- c(input$covg_plhiv_2024*input$split_plhiv_1hp_2024/100, 
                         input$covg_plhiv_2025*input$split_plhiv_1hp_2025/100, 
                         input$covg_plhiv_2026*input$split_plhiv_1hp_2026/100, 
                         input$covg_plhiv_2027*input$split_plhiv_1hp_2027/100, 
-                        input$covg_plhiv_2028*input$split_plhiv_1hp_2028/100)
+                        input$covg_plhiv_2028*input$split_plhiv_1hp_2028/100,
+                        input$covg_plhiv_2029*input$split_plhiv_1hp_2029/100, 
+                        input$covg_plhiv_2030*input$split_plhiv_1hp_2030/100, 
+                        input$covg_plhiv_2031*input$split_plhiv_1hp_2031/100, 
+                        input$covg_plhiv_2032*input$split_plhiv_1hp_2032/100, 
+                        input$covg_plhiv_2033*input$split_plhiv_1hp_2033/100)
     covg_plhiv_3hr <- c(input$covg_plhiv_2024*input$split_plhiv_3hr_2024/100, 
                         input$covg_plhiv_2025*input$split_plhiv_3hr_2025/100, 
                         input$covg_plhiv_2026*input$split_plhiv_3hr_2026/100, 
                         input$covg_plhiv_2027*input$split_plhiv_3hr_2027/100, 
-                        input$covg_plhiv_2028*input$split_plhiv_3hr_2028/100)
+                        input$covg_plhiv_2028*input$split_plhiv_3hr_2028/100,
+                        input$covg_plhiv_2029*input$split_plhiv_3hr_2029/100, 
+                        input$covg_plhiv_2030*input$split_plhiv_3hr_2030/100, 
+                        input$covg_plhiv_2031*input$split_plhiv_3hr_2031/100, 
+                        input$covg_plhiv_2032*input$split_plhiv_3hr_2032/100, 
+                        input$covg_plhiv_2033*input$split_plhiv_3hr_2033/100)
     covg_plhiv_6h <- c(input$covg_plhiv_2024*input$split_plhiv_6h_2024/100, 
                         input$covg_plhiv_2025*input$split_plhiv_6h_2025/100, 
                         input$covg_plhiv_2026*input$split_plhiv_6h_2026/100, 
                         input$covg_plhiv_2027*input$split_plhiv_6h_2027/100, 
-                        input$covg_plhiv_2028*input$split_plhiv_6h_2028/100)
+                        input$covg_plhiv_2028*input$split_plhiv_6h_2028/100,
+                        input$covg_plhiv_2029*input$split_plhiv_6h_2029/100, 
+                        input$covg_plhiv_2030*input$split_plhiv_6h_2030/100, 
+                        input$covg_plhiv_2031*input$split_plhiv_6h_2031/100, 
+                        input$covg_plhiv_2032*input$split_plhiv_6h_2032/100, 
+                        input$covg_plhiv_2033*input$split_plhiv_6h_2033/100)
     covg_plhiv <- list("3hp"=covg_plhiv_3hp,
                        "1hp"=covg_plhiv_1hp,
                        "3hr"=covg_plhiv_3hr,
@@ -3292,28 +4277,53 @@ server <- function(input, output, session) {
                         input$covg_child_2025*input$split_child_3hp_2025/100, 
                         input$covg_child_2026*input$split_child_3hp_2026/100, 
                         input$covg_child_2027*input$split_child_3hp_2027/100, 
-                        input$covg_child_2028*input$split_child_3hp_2028/100)
+                        input$covg_child_2028*input$split_child_3hp_2028/100,
+                        input$covg_child_2029*input$split_child_3hp_2029/100, 
+                        input$covg_child_2030*input$split_child_3hp_2030/100, 
+                        input$covg_child_2031*input$split_child_3hp_2031/100, 
+                        input$covg_child_2032*input$split_child_3hp_2032/100, 
+                        input$covg_child_2033*input$split_child_3hp_2033/100)
     covg_child_1hp <- c(input$covg_child_2024*input$split_child_1hp_2024/100, 
                         input$covg_child_2025*input$split_child_1hp_2025/100, 
                         input$covg_child_2026*input$split_child_1hp_2026/100, 
                         input$covg_child_2027*input$split_child_1hp_2027/100, 
-                        input$covg_child_2028*input$split_child_1hp_2028/100)
+                        input$covg_child_2028*input$split_child_1hp_2028/100,
+                        input$covg_child_2029*input$split_child_1hp_2029/100, 
+                        input$covg_child_2030*input$split_child_1hp_2030/100, 
+                        input$covg_child_2031*input$split_child_1hp_2031/100, 
+                        input$covg_child_2032*input$split_child_1hp_2032/100, 
+                        input$covg_child_2033*input$split_child_1hp_2033/100)
     covg_child_3hr <- c(input$covg_child_2024*input$split_child_3hr_2024/100, 
                         input$covg_child_2025*input$split_child_3hr_2025/100, 
                         input$covg_child_2026*input$split_child_3hr_2026/100, 
                         input$covg_child_2027*input$split_child_3hr_2027/100, 
-                        input$covg_child_2028*input$split_child_3hr_2028/100)
+                        input$covg_child_2028*input$split_child_3hr_2028/100,
+                        input$covg_child_2029*input$split_child_3hr_2029/100, 
+                        input$covg_child_2030*input$split_child_3hr_2030/100, 
+                        input$covg_child_2031*input$split_child_3hr_2031/100, 
+                        input$covg_child_2032*input$split_child_3hr_2032/100, 
+                        input$covg_child_2033*input$split_child_3hr_2033/100)
     covg_child_6h <- c(input$covg_child_2024*input$split_child_6h_2024/100, 
-                       input$covg_child_2025*input$split_child_6h_2025/100, 
-                       input$covg_child_2026*input$split_child_6h_2026/100, 
-                       input$covg_child_2027*input$split_child_6h_2027/100, 
-                       input$covg_child_2028*input$split_child_6h_2028/100)
+                        input$covg_child_2025*input$split_child_6h_2025/100, 
+                        input$covg_child_2026*input$split_child_6h_2026/100, 
+                        input$covg_child_2027*input$split_child_6h_2027/100, 
+                        input$covg_child_2028*input$split_child_6h_2028/100,
+                        input$covg_child_2029*input$split_child_6h_2029/100, 
+                        input$covg_child_2030*input$split_child_6h_2030/100, 
+                        input$covg_child_2031*input$split_child_6h_2031/100, 
+                        input$covg_child_2032*input$split_child_6h_2032/100, 
+                        input$covg_child_2033*input$split_child_6h_2033/100)
     covg_child_none <- c(input$covg_child_2024*input$split_child_none_2024/100, 
-                       input$covg_child_2025*input$split_child_none_2025/100, 
-                       input$covg_child_2026*input$split_child_none_2026/100, 
-                       input$covg_child_2027*input$split_child_none_2027/100, 
-                       input$covg_child_2028*input$split_child_none_2028/100)
-    covg_child <- data.frame("year"=2024:2028,
+                        input$covg_child_2025*input$split_child_none_2025/100, 
+                        input$covg_child_2026*input$split_child_none_2026/100, 
+                        input$covg_child_2027*input$split_child_none_2027/100, 
+                        input$covg_child_2028*input$split_child_none_2028/100,
+                        input$covg_child_2029*input$split_child_none_2029/100, 
+                        input$covg_child_2030*input$split_child_none_2030/100, 
+                        input$covg_child_2031*input$split_child_none_2031/100, 
+                        input$covg_child_2032*input$split_child_none_2032/100, 
+                        input$covg_child_2033*input$split_child_none_2033/100)
+    covg_child <- data.frame("year"=2024:2033,
                              "child_3hp"=covg_child_3hp,
                              "child_1hp"=covg_child_1hp,
                              "child_3hr"=covg_child_3hr,
@@ -3323,28 +4333,53 @@ server <- function(input, output, session) {
                         input$covg_adol_2025*input$split_adol_3hp_2025/100, 
                         input$covg_adol_2026*input$split_adol_3hp_2026/100, 
                         input$covg_adol_2027*input$split_adol_3hp_2027/100, 
-                        input$covg_adol_2028*input$split_adol_3hp_2028/100)
+                        input$covg_adol_2028*input$split_adol_3hp_2028/100,
+                        input$covg_adol_2029*input$split_adol_3hp_2029/100, 
+                        input$covg_adol_2030*input$split_adol_3hp_2030/100, 
+                        input$covg_adol_2031*input$split_adol_3hp_2031/100, 
+                        input$covg_adol_2032*input$split_adol_3hp_2032/100, 
+                        input$covg_adol_2033*input$split_adol_3hp_2033/100)
     covg_adol_1hp <- c(input$covg_adol_2024*input$split_adol_1hp_2024/100, 
                         input$covg_adol_2025*input$split_adol_1hp_2025/100, 
                         input$covg_adol_2026*input$split_adol_1hp_2026/100, 
                         input$covg_adol_2027*input$split_adol_1hp_2027/100, 
-                        input$covg_adol_2028*input$split_adol_1hp_2028/100)
+                        input$covg_adol_2028*input$split_adol_1hp_2028/100,
+                        input$covg_adol_2029*input$split_adol_1hp_2029/100, 
+                        input$covg_adol_2030*input$split_adol_1hp_2030/100, 
+                        input$covg_adol_2031*input$split_adol_1hp_2031/100, 
+                        input$covg_adol_2032*input$split_adol_1hp_2032/100, 
+                        input$covg_adol_2033*input$split_adol_1hp_2033/100)
     covg_adol_3hr <- c(input$covg_adol_2024*input$split_adol_3hr_2024/100, 
-                       input$covg_adol_2025*input$split_adol_3hr_2025/100, 
-                       input$covg_adol_2026*input$split_adol_3hr_2026/100, 
-                       input$covg_adol_2027*input$split_adol_3hr_2027/100, 
-                       input$covg_adol_2028*input$split_adol_3hr_2028/100)
+                        input$covg_adol_2025*input$split_adol_3hr_2025/100, 
+                        input$covg_adol_2026*input$split_adol_3hr_2026/100, 
+                        input$covg_adol_2027*input$split_adol_3hr_2027/100, 
+                        input$covg_adol_2028*input$split_adol_3hr_2028/100,
+                        input$covg_adol_2029*input$split_adol_3hr_2029/100, 
+                        input$covg_adol_2030*input$split_adol_3hr_2030/100, 
+                        input$covg_adol_2031*input$split_adol_3hr_2031/100, 
+                        input$covg_adol_2032*input$split_adol_3hr_2032/100, 
+                        input$covg_adol_2033*input$split_adol_3hr_2033/100)
     covg_adol_6h <- c(input$covg_adol_2024*input$split_adol_6h_2024/100, 
                        input$covg_adol_2025*input$split_adol_6h_2025/100, 
                        input$covg_adol_2026*input$split_adol_6h_2026/100, 
                        input$covg_adol_2027*input$split_adol_6h_2027/100, 
-                       input$covg_adol_2028*input$split_adol_6h_2028/100)
+                       input$covg_adol_2028*input$split_adol_6h_2028/100,
+                       input$covg_adol_2029*input$split_adol_6h_2029/100, 
+                       input$covg_adol_2030*input$split_adol_6h_2030/100, 
+                       input$covg_adol_2031*input$split_adol_6h_2031/100, 
+                       input$covg_adol_2032*input$split_adol_6h_2032/100, 
+                       input$covg_adol_2033*input$split_adol_6h_2033/100)
     covg_adol_none <- c(input$covg_adol_2024*input$split_adol_none_2024/100, 
                          input$covg_adol_2025*input$split_adol_none_2025/100, 
                          input$covg_adol_2026*input$split_adol_none_2026/100, 
                          input$covg_adol_2027*input$split_adol_none_2027/100, 
-                         input$covg_adol_2028*input$split_adol_none_2028/100)
-    covg_adol <- data.frame("year"=2024:2028,
+                         input$covg_adol_2028*input$split_adol_none_2028/100,
+                         input$covg_adol_2029*input$split_adol_none_2029/100, 
+                         input$covg_adol_2030*input$split_adol_none_2030/100, 
+                         input$covg_adol_2031*input$split_adol_none_2031/100, 
+                         input$covg_adol_2032*input$split_adol_none_2032/100, 
+                         input$covg_adol_2033*input$split_adol_none_2033/100)
+    covg_adol <- data.frame("year"=2024:2033,
                              "adol_3hp"=covg_adol_3hp,
                             "adol_3hr"=covg_adol_3hr,
                              "adol_1hp"=covg_adol_1hp,
@@ -3354,28 +4389,53 @@ server <- function(input, output, session) {
                         input$covg_adult_2025*input$split_adult_3hp_2025/100, 
                         input$covg_adult_2026*input$split_adult_3hp_2026/100, 
                         input$covg_adult_2027*input$split_adult_3hp_2027/100, 
-                        input$covg_adult_2028*input$split_adult_3hp_2028/100)
+                        input$covg_adult_2028*input$split_adult_3hp_2028/100,
+                        input$covg_adult_2029*input$split_adult_3hp_2029/100, 
+                        input$covg_adult_2030*input$split_adult_3hp_2030/100, 
+                        input$covg_adult_2031*input$split_adult_3hp_2031/100, 
+                        input$covg_adult_2032*input$split_adult_3hp_2032/100, 
+                        input$covg_adult_2033*input$split_adult_3hp_2033/100)
     covg_adult_1hp <- c(input$covg_adult_2024*input$split_adult_1hp_2024/100, 
                         input$covg_adult_2025*input$split_adult_1hp_2025/100, 
                         input$covg_adult_2026*input$split_adult_1hp_2026/100, 
                         input$covg_adult_2027*input$split_adult_1hp_2027/100, 
-                        input$covg_adult_2028*input$split_adult_1hp_2028/100)
+                        input$covg_adult_2028*input$split_adult_1hp_2028/100,
+                        input$covg_adult_2029*input$split_adult_1hp_2029/100, 
+                        input$covg_adult_2030*input$split_adult_1hp_2030/100, 
+                        input$covg_adult_2031*input$split_adult_1hp_2031/100, 
+                        input$covg_adult_2032*input$split_adult_1hp_2032/100, 
+                        input$covg_adult_2033*input$split_adult_1hp_2033/100)
     covg_adult_3hr <- c(input$covg_adult_2024*input$split_adult_3hr_2024/100, 
                         input$covg_adult_2025*input$split_adult_3hr_2025/100, 
                         input$covg_adult_2026*input$split_adult_3hr_2026/100, 
                         input$covg_adult_2027*input$split_adult_3hr_2027/100, 
-                        input$covg_adult_2028*input$split_adult_3hr_2028/100)
+                        input$covg_adult_2028*input$split_adult_3hr_2028/100,
+                        input$covg_adult_2029*input$split_adult_3hr_2029/100, 
+                        input$covg_adult_2030*input$split_adult_3hr_2030/100, 
+                        input$covg_adult_2031*input$split_adult_3hr_2031/100, 
+                        input$covg_adult_2032*input$split_adult_3hr_2032/100, 
+                        input$covg_adult_2033*input$split_adult_3hr_2033/100)
     covg_adult_6h <- c(input$covg_adult_2024*input$split_adult_6h_2024/100, 
                        input$covg_adult_2025*input$split_adult_6h_2025/100, 
                        input$covg_adult_2026*input$split_adult_6h_2026/100, 
                        input$covg_adult_2027*input$split_adult_6h_2027/100, 
-                       input$covg_adult_2028*input$split_adult_6h_2028/100)
+                       input$covg_adult_2028*input$split_adult_6h_2028/100,
+                       input$covg_adult_2029*input$split_adult_6h_2029/100, 
+                       input$covg_adult_2030*input$split_adult_6h_2030/100, 
+                       input$covg_adult_2031*input$split_adult_6h_2031/100, 
+                       input$covg_adult_2032*input$split_adult_6h_2032/100, 
+                       input$covg_adult_2033*input$split_adult_6h_2033/100)
     covg_adult_none <- c(input$covg_adult_2024*input$split_adult_none_2024/100, 
                          input$covg_adult_2025*input$split_adult_none_2025/100, 
                          input$covg_adult_2026*input$split_adult_none_2026/100, 
                          input$covg_adult_2027*input$split_adult_none_2027/100, 
-                         input$covg_adult_2028*input$split_adult_none_2028/100)
-    covg_adult <- data.frame("year"=2024:2028,
+                         input$covg_adult_2028*input$split_adult_none_2028/100,
+                         input$covg_adult_2029*input$split_adult_none_2029/100, 
+                         input$covg_adult_2030*input$split_adult_none_2030/100, 
+                         input$covg_adult_2031*input$split_adult_none_2031/100, 
+                         input$covg_adult_2032*input$split_adult_none_2032/100, 
+                         input$covg_adult_2033*input$split_adult_none_2033/100)
+    covg_adult <- data.frame("year"=2024:2033,
                              "adult_3hp"=covg_adult_3hp,
                              "adult_1hp"=covg_adult_1hp,
                              "adult_3hr"=covg_adult_3hr,
@@ -3501,7 +4561,7 @@ server <- function(input, output, session) {
   output$plhiv_initiate <- renderPlotly({
     plot_ly(rv()$plhiv_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -4), 
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -4), 
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
@@ -3519,7 +4579,7 @@ server <- function(input, output, session) {
   output$child_initiate <- renderPlotly({
     plot_ly(rv()$child_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -2), 
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -2), 
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
@@ -3537,7 +4597,7 @@ server <- function(input, output, session) {
   output$adol_initiate <- renderPlotly({
     plot_ly(rv()$adol_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -2), 
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -2), 
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
@@ -3555,7 +4615,7 @@ server <- function(input, output, session) {
   output$adult_initiate <- renderPlotly({
     plot_ly(rv()$adult_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp, -2), 
+            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -2), 
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
