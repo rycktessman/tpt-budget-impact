@@ -8,6 +8,7 @@ library(RColorBrewer)
 library(DT)
 library(shinyalert)
 library(abind)
+library(shinycssloaders)
 options(dplyr.summarise.inform = FALSE)
 
 load(url("https://github.com/rycktessman/tpt-budget-impact/raw/main/shiny/params.Rda"))
@@ -292,477 +293,6 @@ model_outcomes_est_plhiv <- function(d, d_ltbi, params) {
 }
 
 #models TB outcomes for all PLHIV
-model_tb_plhiv_old <- function(d, d_ltbi, d_covg, d_ltbi_covg, params) {
-  #d_ltbi (list) is separate from d because each state is stratified by time since entering the model
-  
-  #DONE TB deaths happen first (also include for those that will progress this timestep - otherwise no opportunty to die if notified)
-  #calculate deaths based on previous timestep - no need to stratify by new vs. previously enrolled
-  deaths_output <- model_deaths_plhiv(d, d_ltbi, d_covg, params)
-  tb_deaths <- deaths_output[[1]]
-  non_tb_deaths <- deaths_output[[2]]
-  cum_tb_deaths <- deaths_output[[3]]
-  cum_non_tb_deaths <- deaths_output[[4]]
-  
-  #PARTLY DONE - only the adding 0s part
-  #calculate new size of previously enrolled
-  #order (after deaths) is 1 ART-related transitions, 2 reactivations/reinfections, and 3 notifications/tx
-  #order (after deaths) is 1 reactivations/reinfections (and resulting deaths), 2 notifications/tx, and 3 ART transitions
-  #retain tracking by t (time in model) for ltbi's who remain ltbi (element-wise mult), otherwise sum across t's (matrix mult)
-  #add columns of 0s to beginning of matrices to move everyone up by 1 year
-  ltbi_est_tpt <- cbind(rep(0, nrow(d_covg)), #add new year 1
-                        t(t(d_ltbi$ltbi_est_tpt)*(1-params$p_reactivate_est))*(1-params$p_est_die)*
-                          (1-params$p_est_ltfu)*(1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art) +
-                          t(t(d_ltbi$ltbi_ltfu_tpt)*(1-params$p_reactivate_ltfu))*(1-params$p_ltfu_die)*
-                          params$p_ltfu_art*(1-params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu))
-  ltbi_est_tpt[,params$yrs] <- ltbi_est_tpt[,params$yrs] + ltbi_est_tpt[,params$yrs+1] #add "yr 11" to yrs 10+
-  ltbi_est_tpt <- ltbi_est_tpt[,1:params$yrs] #remove "yr 11"
-  ltbi_est_not <- cbind(rep(0, nrow(d_covg)), 
-                        t(t(d_ltbi$ltbi_est_not)*(1-params$p_reactivate_est))*(1-params$p_est_die)*
-                          (1-params$p_est_ltfu)*(1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art) +
-                          t(t(d_ltbi$ltbi_ltfu_not)*(1-params$p_reactivate_ltfu))*(1-params$p_ltfu_die)*
-                          params$p_ltfu_art*(1-params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu))
-  ltbi_est_not[,params$yrs] <- ltbi_est_not[,params$yrs] + ltbi_est_not[,params$yrs+1]
-  ltbi_est_not <- ltbi_est_not[,1:params$yrs]
-  #p_new_die and p_new_ltfu vary by year in new, so need different ordering/parantheses than ltbi_est above
-  ltbi_new_tpt <- cbind(rep(0, nrow(d_covg)),
-                        t(t(d_ltbi$ltbi_new_tpt)*(1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-                          (1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art))[,1:params$yrs] #no one new in last yr
-  ltbi_new_not <- cbind(rep(0, nrow(d_covg)),
-                        t(t(d_ltbi$ltbi_new_not)*(1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-                          (1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art))[,1:params$yrs] #no one new in last yr
-  #move to established if all fully established
-  ltbi_est_tpt[, (params$yrs_new+1)] <- ltbi_est_tpt[, (params$yrs_new+1)] + ltbi_new_tpt[, (params$yrs_new+1)]
-  ltbi_new_tpt[, (params$yrs_new+1)] <- 0 #replace with zeros if all fully established
-  ltbi_est_not[, (params$yrs_new+1)] <- ltbi_est_not[, (params$yrs_new+1)] + ltbi_new_not[, (params$yrs_new+1)]
-  ltbi_new_not[, (params$yrs_new+1)] <- 0 #replace with zeros if all fully established
-  
-  #add new infections
-  ltbi_est_tpt[, 1] <- ltbi_est_tpt[,1] + 
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*(1-params$prop_fast_art)*(1-params$p_est_ltfu) +
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*(1-params$prop_fast_ltfu)*params$p_ltfu_art +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*(1-params$prop_fast_art)*(1-params$p_new_ltfu[1])
-  ltbi_est_not[, 1] <- ltbi_est_not[,1] + 
-    (d$no_tb_est_not + d$no_tb_est_not_tb)*(1-params$p_est_die)*params$p_infect*(1-params$prop_fast_art)*(1-params$p_est_ltfu) +
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*params$p_infect*(1-params$prop_fast_ltfu)*params$p_ltfu_art +
-    (d$no_tb_new_not + d$no_tb_new_not_tb)*(1-params$p_new_die[1])*params$p_infect*(1-params$prop_fast_art)*(1-params$p_new_ltfu[1])
-  
-  no_tb_est_tpt <- d$no_tb_est_tpt*(1-params$p_est_die)*(1-params$p_infect)*(1-params$p_est_ltfu) +
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_est_ltfu) + #can get infected, notified, cured in single year
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*(1-params$p_infect)*(1-params$p_new_ltfu[1]) +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_new_ltfu[1]) +
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*(1-params$p_infect)*params$p_ltfu_art +
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success + #if notified or if transition back on ART
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) + #if notified or if transition back on ART
-    d$active_tb_est_tpt*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif*params$p_success*(1-params$p_est_ltfu) +
-    d$active_tb_new_tpt*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif*params$p_success*(1-params$p_new_ltfu[1]) +
-    d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) +
-    d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success +
-    d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die)*(1-params$p_new_ltfu))*(1-params$p_die_tb_art)*params$p_notif*params$p_success +
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success +
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success +
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success
-  no_tb_est_not <- d$no_tb_est_not*(1-params$p_est_die)*(1-params$p_infect)*(1-params$p_est_ltfu) +
-    d$no_tb_new_not*(1-params$p_new_die[1])*(1-params$p_infect)*(1-params$p_new_ltfu[1]) +
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*(1-params$p_infect)*params$p_ltfu_art
-  #track no TPT that got TB separately (wouldn't be eligible for TPT)
-  no_tb_est_not_tb <- d$no_tb_est_not_tb*(1-params$p_est_die)*(1-params$p_infect)*(1-params$p_est_ltfu) +
-    (d$no_tb_est_not_tb + d$no_tb_est_not)*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*
-    (1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_est_ltfu) +
-    d$no_tb_new_not_tb*(1-params$p_new_die[1])*(1-params$p_infect)*(1-params$p_new_ltfu[1]) +
-    (d$no_tb_new_not_tb + d$no_tb_new_not)*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*
-    (1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_new_ltfu[1]) +
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*
-    (1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) +
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*
-    (1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success +
-    d$active_tb_est_not*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif*params$p_success*(1-params$p_est_ltfu) +
-    d$active_tb_new_not*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif*params$p_success*(1-params$p_new_ltfu[1]) +
-    d$active_tb_ltfu_not*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) +
-    d$active_tb_ltfu_not*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success +
-    d_ltbi$ltbi_new_not%*%(params$p_reactivate_new*(1-params$p_new_die)*(1-params$p_new_ltfu))*(1-params$p_die_tb_art)*params$p_notif*params$p_success +
-    d_ltbi$ltbi_est_not%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success +
-    d_ltbi$ltbi_new_not%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success +
-    d_ltbi$ltbi_est_not%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*params$p_success
-  active_tb_est_tpt <- d$active_tb_est_tpt*(1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d$active_tb_new_tpt*(1-params$p_new_die[1])*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_new_ltfu[1]) +
-    d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die)*(1-params$p_new_ltfu))*(1-params$p_die_tb_art)*(1-params$p_notif) +
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*(1-params$p_notif) +
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_notif)*(1-params$p_new_ltfu[1]) +
-    #those that get notified but have unsuccessful tx outcomes
-    d$active_tb_est_tpt*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d$active_tb_new_tpt*(1-params$p_new_die[1])*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_new_ltfu[1]) +
-    d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die)*(1-params$p_new_ltfu))*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) +
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) +
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*params$p_notif*(1-params$p_success)*(1-params$p_new_ltfu[1]) +
-    #those that reactivate/get infected & fast progress, return from LTFU (thereby being notified) but have unsuccessful tx outcomes
-    d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) +
-    d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) +
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) +
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) #if notified or if transition back on ART
-  
-  active_tb_est_not <- d$active_tb_est_not*(1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d$active_tb_new_not*(1-params$p_new_die[1])*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_new_ltfu[1]) +
-    d_ltbi$ltbi_new_not%*%(params$p_reactivate_new*(1-params$p_new_die)*(1-params$p_new_ltfu))*(1-params$p_die_tb_art)*(1-params$p_notif) +
-    d_ltbi$ltbi_est_not%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_new_not%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*(1-params$p_notif) +
-    d_ltbi$ltbi_est_not%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d$no_tb_est_not*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d$no_tb_new_not*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_notif)*(1-params$p_new_ltfu[1]) +
-    d$no_tb_est_not_tb*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_notif)*(1-params$p_est_ltfu) +
-    d$no_tb_new_not_tb*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_notif)*(1-params$p_new_ltfu[1]) +
-    #those that get notified but have unsuccessful tx outcomes
-    d$active_tb_est_not*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d$active_tb_new_not*(1-params$p_new_die[1])*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_new_ltfu[1]) +
-    d_ltbi$ltbi_new_not%*%(params$p_reactivate_new*(1-params$p_new_die)*(1-params$p_new_ltfu))*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) +
-    d_ltbi$ltbi_est_not%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d_ltbi$ltbi_new_not%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*(1-params$p_new_ltfu))*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) +
-    d_ltbi$ltbi_est_not%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d$no_tb_est_not*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d$no_tb_new_not*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*params$p_notif*(1-params$p_success)*(1-params$p_new_ltfu[1]) +
-    d$no_tb_est_not_tb*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*params$p_notif*(1-params$p_success)*(1-params$p_est_ltfu) +
-    d$no_tb_new_not_tb*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*params$p_notif*(1-params$p_success)*(1-params$p_new_ltfu[1]) +
-    #those that return from LTFU (thereby being notified) but have unsuccessful tx outcomes
-    d$active_tb_ltfu_not*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) +
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) +
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) +
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art*(1-params$p_success) 
-  
-  #calculate newly LTFU - keep track of TPT status since we allow return to ART (new since I4TB version)
-  #assume those that are notified automatically return to ART, those that aren't can't return to ART
-  #retain tracking by t (time in model) for ltbi's who remain ltbi (element-wise mult), otherwise sum across t's (matrix mult)
-  #unlike above, nobody stays in new depending on yr (because they're all now LTFU)
-  ltbi_ltfu_tpt <- cbind(rep(0, nrow(d_covg)), #add new year 1
-                         t(t(d_ltbi$ltbi_ltfu_tpt)*(1-params$p_reactivate_ltfu))*(1-params$p_ltfu_die)*
-                           (1-params$p_ltfu_art)*(1-params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu) + #subtract out deaths, reactivations, returns to ART
-                           t(t(d_ltbi$ltbi_new_tpt)*((1-params$p_reactivate_new)*(1-params$p_new_die)*params$p_new_ltfu))*
-                           (1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art) + #add newly lost to follow up that don't die or reactivate
-                           t(t(d_ltbi$ltbi_est_tpt)*(1-params$p_reactivate_est))*(1-params$p_est_die)*
-                           (1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art)*params$p_est_ltfu)
-  ltbi_ltfu_tpt[,params$yrs] <- ltbi_ltfu_tpt[,params$yrs] + ltbi_ltfu_tpt[,params$yrs+1] #add yr 11 to yr 10+
-  ltbi_ltfu_tpt <- ltbi_ltfu_tpt[,1:params$yrs] #remove yr 11
-  ltbi_ltfu_not <- cbind(rep(0, nrow(d_covg)), 
-                         t(t(d_ltbi$ltbi_ltfu_not)*(1-params$p_reactivate_ltfu))*(1-params$p_ltfu_die)*
-                           (1-params$p_ltfu_art)*(1-params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu) + #subtract out deaths and reactivations
-                           t(t(d_ltbi$ltbi_new_not)*((1-params$p_reactivate_new)*(1-params$p_new_die)*params$p_new_ltfu))*
-                           (1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art) +
-                           t(t(d_ltbi$ltbi_est_not)*(1-params$p_reactivate_est))*(1-params$p_est_die)*
-                           (1-params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art)*params$p_est_ltfu)
-  ltbi_ltfu_not[,params$yrs] <- ltbi_ltfu_not[,params$yrs] + ltbi_ltfu_not[,params$yrs+1] #add yr 11 to yr 10+
-  ltbi_ltfu_not <- ltbi_ltfu_not[,1:params$yrs] #remove yr 11
-  
-  #add new infections
-  ltbi_ltfu_tpt[, 1] <- ltbi_ltfu_tpt[,1] + 
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*(1-params$prop_fast_art)*params$p_est_ltfu +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*(1-params$prop_fast_art)*params$p_new_ltfu[1] +
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*(1-params$prop_fast_ltfu)*(1-params$p_ltfu_art)
-  ltbi_ltfu_not[, 1] <- ltbi_ltfu_not[,1] + 
-    (d$no_tb_est_not + d$no_tb_est_not_tb)*(1-params$p_est_die)*params$p_infect*(1-params$prop_fast_art)*params$p_est_ltfu +
-    (d$no_tb_new_not + d$no_tb_new_not_tb)*(1-params$p_new_die[1])*params$p_infect*(1-params$prop_fast_art)*params$p_new_ltfu[1] +
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*params$p_infect*(1-params$prop_fast_ltfu)*(1-params$p_ltfu_art)
-  
-  no_tb_ltfu_tpt <- d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*(1-params$p_infect)*(1-params$p_ltfu_art) + #no tb last period, subtract out deaths
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*(1-params$p_infect)*params$p_new_ltfu[1] + #add newly lost to follow up that don't die
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_new_ltfu[1] +
-    d$no_tb_est_tpt*(1-params$p_est_die)*(1-params$p_infect)*params$p_est_ltfu + 
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_est_ltfu +
-    d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die)*params$p_new_ltfu)*(1-params$p_die_tb_art)*params$p_notif*params$p_success + #new activations that are LTFU and notified
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_est_ltfu + #new activations that are LTFU and notified
-    d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu +
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*params$p_new_ltfu)*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success + #new activations that are LTFU and notified
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_est_ltfu + #new activations that are LTFU and notified
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu +
-    d$active_tb_new_tpt*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif*params$p_success*params$p_new_ltfu[1] + #active TB that are LTFU and notified
-    d$active_tb_est_tpt*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif*params$p_success*params$p_est_ltfu + #active TB that are LTFU and notified
-    d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu
-  no_tb_ltfu_not <- d$no_tb_ltfu_not*(1-params$p_ltfu_die)*(1-params$p_infect)*(1-params$p_ltfu_art) + #no tb last period, subtract out deaths
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu +
-    (d$no_tb_new_not + d$no_tb_new_not_tb)*(1-params$p_new_die[1])*(1-params$p_infect)*params$p_new_ltfu[1] + 
-    (d$no_tb_new_not + d$no_tb_new_not_tb)*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_new_ltfu[1] +
-    (d$no_tb_est_not + d$no_tb_est_not_tb)*(1-params$p_est_die)*(1-params$p_infect)*params$p_est_ltfu + 
-    (d$no_tb_est_not + d$no_tb_est_not_tb)*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_est_ltfu +
-    d_ltbi$ltbi_new_not%*%(params$p_reactivate_new*(1-params$p_new_die)*params$p_new_ltfu)*(1-params$p_die_tb_art)*params$p_notif*params$p_success + #new activations that are LTFU and notified
-    d_ltbi$ltbi_est_not%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_est_ltfu + #new activations that are LTFU and notified
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu +
-    d_ltbi$ltbi_new_not%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*params$p_new_ltfu)*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*params$p_success + #new activations that are LTFU and notified
-    d_ltbi$ltbi_est_not%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*params$p_success*params$p_est_ltfu + #new activations that are LTFU and notified
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu +
-    d$active_tb_new_not*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif*params$p_success*params$p_new_ltfu[1] + #active TB that are LTFU and notified
-    d$active_tb_est_not*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif*params$p_success*params$p_est_ltfu + #active TB that are LTFU and notified
-    d$active_tb_ltfu_not*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*params$p_notif_ltfu*params$p_success*params$p_est_ltfu
-  active_tb_ltfu_tpt <- d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*(1-params$p_notif_ltfu)*(1-params$p_ltfu_art) + #subtract out deaths & notifications
-    d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*(1-params$p_ltfu_art) + #new activations that aren't notified and don't die
-    d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die)*params$p_new_ltfu)*(1-params$p_die_tb_art)*(1-params$p_notif) + #reactivations that aren't notified and are LTFU
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*params$p_est_ltfu + #reactivations that aren't notified and are LTFU
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*params$p_new_ltfu)*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*(1-params$p_notif) + #new activations that are LTFU and notified
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*(1-params$p_notif)*params$p_est_ltfu + #new activations that are LTFU and notified
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*(1-params$p_ltfu_art) +
-    d$active_tb_new_tpt*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*(1-params$p_notif)*params$p_new_ltfu[1] + #active TB that are LTFU
-    d$active_tb_est_tpt*(1-params$p_die_tb_art)*(1-params$p_est_die)*(1-params$p_notif)*params$p_est_ltfu + #active TB that are LTF
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*(1-params$p_ltfu_art) +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*(1-params$p_notif)*params$p_new_ltfu[1] +
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*(1-params$p_notif)*params$p_est_ltfu +
-    #add in those that get notified but don't have successful tx outcomes
-    d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) + #subtract out deaths & notifications
-    d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) + #new activations that aren't notified and don't die
-    d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die)*params$p_new_ltfu)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) + #reactivations that aren't notified and are LTFU
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_est_ltfu + #reactivations that aren't notified and are LTFU
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*params$p_new_ltfu)*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) + #new activations that are LTFU and notified
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_est_ltfu + #new activations that are LTFU and notified
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) +
-    d$active_tb_new_tpt*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif*(1-params$p_success)*params$p_new_ltfu[1] + #active TB that are LTFU
-    d$active_tb_est_tpt*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif*(1-params$p_success)*params$p_est_ltfu + #active TB that are LTF
-    d$no_tb_ltfu_tpt*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) +
-    d$no_tb_new_tpt*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_new_ltfu[1] +
-    d$no_tb_est_tpt*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_est_ltfu 
-  active_tb_ltfu_not <- d$active_tb_ltfu_not*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) + #subtract out deaths & notifications
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) + #new activations that aren't notified and don't die
-    d_ltbi$ltbi_new_not%*%(params$p_reactivate_new*(1-params$p_new_die)*params$p_new_ltfu)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) + #reactivations that aren't notified and are LTFU
-    d_ltbi$ltbi_est_not%*%params$p_reactivate_est*(1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_est_ltfu + #reactivations that aren't notified and are LTFU
-    d_ltbi$ltbi_new_not%*%((1-params$p_reactivate_new)*(1-params$p_new_die)*params$p_new_ltfu)*
-    params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success) + #new activations that are LTFU and notified
-    d_ltbi$ltbi_est_not%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*
-    (1-params$p_est_die)*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_est_ltfu + #new activations that are LTFU and notified
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*
-    (1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) +
-    d$active_tb_new_not*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif*(1-params$p_success)*params$p_new_ltfu[1] + #active TB that are LTFU
-    d$active_tb_est_not*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif*(1-params$p_success)*params$p_est_ltfu + #active TB that are LTFU
-    d$no_tb_ltfu_not*(1-params$p_ltfu_die)*params$p_infect*params$prop_fast_ltfu*(1-params$p_die_tb_ltfu)*params$p_notif_ltfu*(1-params$p_success)*(1-params$p_ltfu_art) +
-    (d$no_tb_new_not + d$no_tb_new_not_tb)*(1-params$p_new_die[1])*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_new_ltfu[1] +
-    (d$no_tb_est_not + d$no_tb_est_not_tb)*(1-params$p_est_die)*params$p_infect*params$prop_fast_art*(1-params$p_die_tb_art)*params$p_notif*(1-params$p_success)*params$p_est_ltfu
-  
-  #add to cases before TPT-related adjustments are made 
-  cases_est <- d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die)) +
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die) +
-    d_ltbi$ltbi_new_not%*%(params$p_reactivate_new*(1-params$p_new_die)) +
-    d_ltbi$ltbi_est_not%*%params$p_reactivate_est*(1-params$p_est_die) +
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die))*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art +
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_est_die) +
-    d_ltbi$ltbi_new_not%*%((1-params$p_reactivate_new)*(1-params$p_new_die))*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art +
-    d_ltbi$ltbi_est_not%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_est_die) +
-    d$no_tb_est_tpt*params$p_infect*params$prop_fast_art*(1-params$p_est_die) +
-    d$no_tb_est_not*params$p_infect*params$prop_fast_art*(1-params$p_est_die) +
-    d$no_tb_est_not_tb*params$p_infect*params$prop_fast_art*(1-params$p_est_die) +
-    d$no_tb_new_tpt*params$p_infect*params$prop_fast_art*(1-params$p_new_die[1]) +
-    d$no_tb_new_not*params$p_infect*params$prop_fast_art*(1-params$p_new_die[1]) +
-    d$no_tb_new_not_tb*params$p_infect*params$prop_fast_art*(1-params$p_new_die[1]) 
-  notif_est <- d_ltbi$ltbi_new_tpt%*%(params$p_reactivate_new*(1-params$p_new_die))*params$p_notif +
-    d_ltbi$ltbi_est_tpt%*%params$p_reactivate_est*(1-params$p_est_die)*params$p_notif +
-    d_ltbi$ltbi_new_not%*%(params$p_reactivate_new*(1-params$p_new_die))*params$p_notif +
-    d_ltbi$ltbi_est_not%*%params$p_reactivate_est*(1-params$p_est_die)*params$p_notif +
-    d_ltbi$ltbi_new_tpt%*%((1-params$p_reactivate_new)*(1-params$p_new_die))*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*params$p_notif +
-    d_ltbi$ltbi_est_tpt%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_est_die)*params$p_notif +
-    d_ltbi$ltbi_new_not%*%((1-params$p_reactivate_new)*(1-params$p_new_die))*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*params$p_notif +
-    d_ltbi$ltbi_est_not%*%(1-params$p_reactivate_est)*params$p_infect*(1-params$ltbi_protect_art)*params$prop_fast_art*(1-params$p_est_die)*params$p_notif +
-    d$active_tb_est_tpt*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif +
-    d$active_tb_new_tpt*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif +
-    d$active_tb_est_not*(1-params$p_die_tb_art)*(1-params$p_est_die)*params$p_notif +
-    d$active_tb_new_not*(1-params$p_die_tb_art)*(1-params$p_new_die[1])*params$p_notif +
-    d$no_tb_est_tpt*params$p_infect*params$prop_fast_art*(1-params$p_est_die)*params$p_notif +
-    d$no_tb_est_not*params$p_infect*params$prop_fast_art*(1-params$p_est_die)*params$p_notif +
-    d$no_tb_est_not_tb*params$p_infect*params$prop_fast_art*(1-params$p_est_die)*params$p_notif +
-    d$no_tb_new_tpt*params$p_infect*params$prop_fast_art*(1-params$p_new_die[1])*params$p_notif +
-    d$no_tb_new_not*params$p_infect*params$prop_fast_art*(1-params$p_new_die[1])*params$p_notif +
-    d$no_tb_new_not_tb*params$p_infect*params$prop_fast_art*(1-params$p_new_die[1])*params$p_notif 
-  cases_ltfu <- d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die) +
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die) +
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*(1-params$p_ltfu_die) +
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*(1-params$p_ltfu_die) +
-    d$no_tb_ltfu_tpt*params$p_infect*params$prop_fast_ltfu*(1-params$p_ltfu_die) +
-    d$no_tb_ltfu_not*params$p_infect*params$prop_fast_ltfu*(1-params$p_ltfu_die)
-  notif_ltfu <- d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*params$p_notif_ltfu +
-    d_ltbi$ltbi_ltfu_tpt%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art +
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*params$p_notif_ltfu +
-    d_ltbi$ltbi_ltfu_not%*%params$p_reactivate_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art +
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*(1-params$p_ltfu_die)*params$p_notif_ltfu +
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*(1-params$p_ltfu_die)*params$p_notif_ltfu +
-    d_ltbi$ltbi_ltfu_tpt%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art +
-    d_ltbi$ltbi_ltfu_not%*%(1-params$p_reactivate_ltfu)*params$p_infect*(1-params$ltbi_protect_ltfu)*params$prop_fast_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art +
-    d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*params$p_notif_ltfu +
-    d$active_tb_ltfu_tpt*(1-params$p_die_tb_ltfu)*(1-params$p_ltfu_die)*(1-params$p_notif_ltfu)*params$p_ltfu_art +
-    d$no_tb_ltfu_tpt*params$p_infect*params$prop_fast_ltfu*(1-params$p_ltfu_die)*params$p_notif_ltfu +
-    d$no_tb_ltfu_not*params$p_infect*params$prop_fast_ltfu*(1-params$p_ltfu_die)*params$p_notif_ltfu +
-    d$no_tb_ltfu_tpt*params$p_infect*params$prop_fast_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art +
-    d$no_tb_ltfu_not*params$p_infect*params$prop_fast_ltfu*(1-params$p_ltfu_die)*(1-params$p_die_tb_ltfu)*(1-params$p_notif_ltfu)*params$p_ltfu_art
-  
-  #DONE.calculate which previously enrolled go on TPT, complete, etc.
-  #only need to keep track of t (year since entering model) for the explicitly ltbi variables
-  initiate_ipt_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_ipt_covg_prev #previously enrolled(prev)=established (est)
-  initiate_3hp_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_3hp_covg_prev
-  initiate_1hp_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_1hp_covg_prev
-  initiate_3hr_est <- (rowSums(ltbi_est_not) + no_tb_est_not)*d_covg$initiate_3hr_covg_prev
-  initiate_ipt_ltbi_est <- ltbi_est_not*d_covg$initiate_ipt_covg_prev #keep matrix format for LTBI
-  initiate_3hp_ltbi_est <- ltbi_est_not*d_covg$initiate_3hp_covg_prev
-  initiate_1hp_ltbi_est <- ltbi_est_not*d_covg$initiate_1hp_covg_prev
-  initiate_3hr_ltbi_est <- ltbi_est_not*d_covg$initiate_3hr_covg_prev
-  tox_nohosp_ipt_est <- initiate_ipt_est*params$p_tox_nohosp_ipt
-  tox_nohosp_3hp_est <- initiate_3hp_est*params$p_tox_nohosp_3hp
-  tox_nohosp_1hp_est <- initiate_1hp_est*params$p_tox_nohosp_1hp
-  tox_nohosp_3hr_est <- initiate_3hr_est*params$p_tox_nohosp_3hr
-  tox_hosp_ipt_est <- initiate_ipt_est*params$p_tox_hosp_ipt
-  tox_hosp_3hp_est <- initiate_3hp_est*params$p_tox_hosp_3hp
-  tox_hosp_1hp_est <- initiate_1hp_est*params$p_tox_hosp_1hp
-  tox_hosp_3hr_est <- initiate_3hr_est*params$p_tox_hosp_3hr
-  complete_ipt_est <- initiate_ipt_est*params$p_complete_ipt*(1-(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt))
-  complete_3hp_est <- initiate_3hp_est*params$p_complete_3hp*(1-(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp))
-  complete_1hp_est <- initiate_1hp_est*params$p_complete_1hp*(1-(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
-  complete_3hr_est <- initiate_3hr_est*params$p_complete_3hr*(1-(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
-  part_complete_ipt_est <- initiate_ipt_est - 
-    (complete_ipt_est + tox_nohosp_ipt_est + tox_hosp_ipt_est)
-  part_complete_3hp_est <- initiate_3hp_est - 
-    (complete_3hp_est + tox_nohosp_3hp_est + tox_hosp_3hp_est)
-  part_complete_1hp_est <- initiate_1hp_est - 
-    (complete_1hp_est + tox_nohosp_1hp_est + tox_hosp_1hp_est)
-  part_complete_3hr_est <- initiate_3hr_est - 
-    (complete_3hr_est + tox_nohosp_3hr_est + tox_hosp_3hr_est)
-  complete_ipt_ltbi_est <- initiate_ipt_ltbi_est*params$p_complete_ipt #keep matrix format
-  complete_3hp_ltbi_est <- initiate_3hp_ltbi_est*params$p_complete_3hp
-  complete_1hp_ltbi_est <- initiate_1hp_ltbi_est*params$p_complete_1hp
-  complete_3hr_ltbi_est <- initiate_3hr_ltbi_est*params$p_complete_3hr
-  part_complete_ipt_ltbi_est <- initiate_ipt_ltbi_est*
-    (1-(params$p_complete_ipt + params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt))
-  part_complete_3hp_ltbi_est <- initiate_3hp_ltbi_est*
-    (1-(params$p_complete_3hp + params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp))
-  part_complete_1hp_ltbi_est <- initiate_1hp_ltbi_est*
-    (1-(params$p_complete_1hp + params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
-  part_complete_3hr_ltbi_est <- initiate_3hr_ltbi_est*
-    (1-(params$p_complete_3hr + params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
-  
-  #calculate results of TPT provision on TB status and TPT status
-  #those that initiate are no longer eligible for TPT again, regardless of completion
-  ltbi_est_not <- ltbi_est_not - 
-    (initiate_ipt_ltbi_est + initiate_3hp_ltbi_est + initiate_1hp_ltbi_est + initiate_3hr_ltbi_est)
-  no_tb_est_not <- no_tb_est_not - 
-    (initiate_ipt_est - rowSums(initiate_ipt_ltbi_est)) -
-    (initiate_3hp_est - rowSums(initiate_3hp_ltbi_est)) -
-    (initiate_1hp_est - rowSums(initiate_1hp_ltbi_est)) -
-    (initiate_3hr_est - rowSums(initiate_3hr_ltbi_est))
-  #full completion of those with LTBI
-  ltbi_est_tpt <- ltbi_est_tpt + complete_ipt_ltbi_est*(1-params$eff_ipt) +
-    complete_3hp_ltbi_est*(1-params$eff_3hp) +
-    complete_1hp_ltbi_est*(1-params$eff_1hp) +
-    complete_3hr_ltbi_est*(1-params$eff_3hr)
-  no_tb_est_tpt <- no_tb_est_tpt + rowSums(complete_ipt_ltbi_est)*params$eff_ipt +
-    rowSums(complete_3hp_ltbi_est)*params$eff_3hp +
-    rowSums(complete_1hp_ltbi_est)*params$eff_1hp +
-    rowSums(complete_3hr_ltbi_est)*params$eff_3hr
-  #partial completion of those with LTBI
-  ltbi_est_tpt <- ltbi_est_tpt + part_complete_ipt_ltbi_est*(1-params$eff_ipt/2) +
-    part_complete_3hp_ltbi_est*(1-params$eff_3hp/2) +
-    part_complete_1hp_ltbi_est*(1-params$eff_1hp/2) +
-    part_complete_3hr_ltbi_est*(1-params$eff_3hr/2)
-  no_tb_est_tpt <- no_tb_est_tpt + rowSums(part_complete_ipt_ltbi_est)*params$eff_ipt/2 +
-    rowSums(part_complete_3hp_ltbi_est)*params$eff_3hp/2 +
-    rowSums(part_complete_1hp_ltbi_est)*params$eff_1hp/2 +
-    rowSums(part_complete_3hr_ltbi_est)*params$eff_3hr/2
-  #no completion if those with LTBI - toxicity - no efficacy so only flows to ltbi_est_tpt
-  ltbi_est_tpt <- ltbi_est_tpt + 
-    initiate_ipt_ltbi_est*(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt) +
-    initiate_3hp_ltbi_est*(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp) +
-    initiate_1hp_ltbi_est*(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp) +
-    initiate_3hr_ltbi_est*(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr)
-  #those that initiate and didn't have LTBI go to no_tb_est_tpt regardless of completion status
-  no_tb_est_tpt <- no_tb_est_tpt + 
-    (initiate_ipt_est - rowSums(initiate_ipt_ltbi_est)) +
-    (initiate_3hp_est - rowSums(initiate_3hp_ltbi_est)) +
-    (initiate_1hp_est - rowSums(initiate_1hp_ltbi_est)) +
-    (initiate_3hr_est - rowSums(initiate_3hr_ltbi_est))
-  
-  #add back to data and take only variables we need to track for next round
-  #LTBI matrices are in a separate list
-  est_data <- data.frame(tb_deaths, non_tb_deaths, 
-                         cum_tb_deaths, cum_non_tb_deaths,
-                         cases_est, notif_est,
-                         cases_ltfu, notif_ltfu,
-                         #TPT outcomes (to calculate costs)
-                         initiate_ipt_est, initiate_3hp_est, initiate_1hp_est, initiate_3hr_est,
-                         tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est, tox_nohosp_3hr_est,
-                         tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est, tox_hosp_3hr_est,
-                         complete_ipt_est, complete_3hp_est, complete_1hp_est, complete_3hr_est,
-                         part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est, part_complete_3hr_est,
-                         #TB-TPT status (for next timestep)
-                         active_tb_est_tpt, active_tb_est_not,
-                         no_tb_est_tpt, no_tb_est_not, no_tb_est_not_tb, 
-                         active_tb_ltfu_tpt, active_tb_ltfu_not,
-                         no_tb_ltfu_tpt, no_tb_ltfu_not
-  )
-  est_data_ltbi <- list(ltbi_new_tpt, ltbi_new_not,
-                        ltbi_est_tpt, ltbi_est_not, 
-                        ltbi_ltfu_tpt, ltbi_ltfu_not)
-  names(est_data_ltbi) <- c("ltbi_new_tpt", "ltbi_new_not",
-                            "ltbi_est_tpt", "ltbi_est_not", 
-                            "ltbi_ltfu_tpt", "ltbi_ltfu_not")
-  
-  #add newly enrolled for this year from d_covg (already modeled before loop)
-  d_covg <- d_covg %>% select(-c(tb_deaths, non_tb_deaths, 
-                                 cum_tb_deaths, cum_non_tb_deaths,
-                                 cases_est, notif_est,
-                                 cases_ltfu, notif_ltfu,
-                                 #TPT outcomes (to calculate costs)
-                                 initiate_ipt_est, initiate_3hp_est, initiate_1hp_est, initiate_3hr_est,
-                                 tox_nohosp_ipt_est, tox_nohosp_3hp_est, tox_nohosp_1hp_est, tox_nohosp_3hr_est,
-                                 tox_hosp_ipt_est, tox_hosp_3hp_est, tox_hosp_1hp_est, tox_hosp_3hr_est,
-                                 complete_ipt_est, complete_3hp_est, complete_1hp_est, complete_3hr_est,
-                                 part_complete_ipt_est, part_complete_3hp_est, part_complete_1hp_est, part_complete_3hr_est,
-                                 #TB-TPT status (for next timestep)
-                                 active_tb_est_tpt, active_tb_est_not,
-                                 no_tb_est_tpt, no_tb_est_not, no_tb_est_not_tb,
-                                 active_tb_ltfu_tpt, active_tb_ltfu_not,
-                                 no_tb_ltfu_tpt, no_tb_ltfu_not
-  ))
-  #add newly enrolled LTBI for this year from d_ltbi_covg (already modeled before loop)
-  est_data_ltbi[["ltbi_new_tpt"]][,1] <- d_ltbi_covg$ltbi_new_tpt
-  est_data_ltbi[["ltbi_new_not"]][,1] <- d_ltbi_covg$ltbi_new_not
-  
-  data <- bind_cols(d_covg, est_data)
-  data_all <- list(data, est_data_ltbi)
-  return(data_all)
-}
-
 model_tb_plhiv <- function(d, d_ltbi, params) {
   #order is: (1) TPT; (2) Updates to TB status from TPT; (3) Active TB deaths; (4) Non-TB deaths, 
   # (5) TB-related transitions, (6) ART-related transitions, (7) Move LTBI up by 1 year 
@@ -1684,284 +1214,7 @@ calc_costs <- function(data, pop_type, costs,
   return(data)
 }
 
-#wrapper function to run the whole model for PLHIV - regimen option is obselete
-run_model_plhiv_old <- function(country_name, regimen, covg, scenarios, options, params, pop_calcs, option_split) {
-  policy_horizon <- 10 #for now, implement over 10 years and calculate costs/outcomes over 10 years
-  analytic_horizon <- 10
-  start_yr <- 2024
-  end_yr <- start_yr + analytic_horizon - 1
-  policy_end_yr <- start_yr + policy_horizon - 1
-  
-  #options to be added later
-  pwh_transitions <- 1 #1=base case (infrequent transitions on/off ART); 2=more frequent transitions
-  reinfect <- 0 #0=base case, or annual risk of infection
-  price_tpt <- "base" #base, 3hp_reduced (3HP price only reduced by 50%), or vary (vary price widely in PSA)
-  cost_tbtx <- "base" #base (main analysis, varies by country), vary (vary widely in PSA)
-  visits_3hp <- 1 #1 or 2 monitoring visits (1 in main analysis - initiation and completion)
-  visits_3hr <- visits_3hp
-  tpt_wastage <- "full courses"  #wastage factor for drugs (e.g. 0.1), or cost out "full courses" for all initiators
-  comp_scen <- "none"
-  
-  #implementation of options
-  if(reinfect!=0) {
-    params$p_infect <- reinfect
-  }
-  params$n_visit_3hp <- visits_3hp
-  params$n_visit_3hr <- visits_3hr
-  params$wastage <- ifelse(tpt_wastage=="full courses", 0, as.double(tpt_wastage))
-  params$part_course_cost <- ifelse(tpt_wastage=="full courses", 1, 0.5)
-  
-  #load total numbers of PLHIV to cover by year
-  pop_calcs <- pop_calcs %>% dplyr::select(code, country, year, plhiv_art_new_lag, backlog_none) %>%
-    filter(year>=start_yr & year<=policy_end_yr) %>%
-    rename("plhiv_new"="plhiv_art_new_lag",
-           "backlog"="backlog_none") %>%
-    mutate(backlog=if_else(year==min(year), backlog, as.numeric(NA)))
-  pop_calcs_none <- pop_calcs %>%
-    mutate(scenario=scenarios[[2]],
-           initiate_ipt_covg_new=0,
-           initiate_ipt_covg_prev=0,
-           initiate_3hp_covg_new=0,
-           initiate_3hp_covg_prev=0,
-           initiate_1hp_covg_new=0,
-           initiate_1hp_covg_prev=0,
-           initiate_3hr_covg_new=0,
-           initiate_3hr_covg_prev=0)
-  pop_calcs_tpt <- pop_calcs %>% 
-    mutate(scenario=scenarios[[1]],
-           initiate_ipt_covg_new=pmin(covg[["6h"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                      (covg[["6h"]]/(100*params$p_initiate))),
-           initiate_ipt_covg_prev=pmin(covg[["6h"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                       (covg[["6h"]]/(100*params$p_initiate))),
-           initiate_3hp_covg_new=pmin(covg[["3hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                      (covg[["3hp"]]/(100*params$p_initiate))),
-           initiate_3hp_covg_prev=pmin(covg[["3hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                       (covg[["3hp"]]/(100*params$p_initiate))),
-           initiate_1hp_covg_new=pmin(covg[["1hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                      (covg[["1hp"]]/(100*params$p_initiate))),
-           initiate_1hp_covg_prev=pmin(covg[["1hp"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                       (covg[["1hp"]]/(100*params$p_initiate))),
-           initiate_3hr_covg_new=pmin(covg[["3hr"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                      (covg[["3hr"]]/(100*params$p_initiate))),
-           initiate_3hr_covg_prev=pmin(covg[["3hr"]]/(covg[["6h"]] + covg[["3hp"]] + covg[["1hp"]] + covg[["3hr"]]), 
-                                       (covg[["3hr"]]/(100*params$p_initiate))))
-  pop <- bind_rows(pop_calcs_none, pop_calcs_tpt)
-  
-  #set up model
-  #manipulate progression risk to be vector over time (since entering the model). last stratification is 10+
-  p_reactivate_new <- c(params$p_reactivate_new_yr1, params$p_reactivate_new_yr2, rep(0, length(3:10)))
-  p_reactivate_est <- c(params$p_reactivate_est_yr1, params$p_reactivate_est_yr2,
-                        rep(params$p_reactivate_est_yr3_9, length(3:9)),
-                        params$p_reactivate_est_yr10plus)
-  p_reactivate_ltfu <- c(0, params$p_reactivate_ltfu_yr2,
-                         rep(params$p_reactivate_ltfu_yr3_9, length(3:9)),
-                         params$p_reactivate_ltfu_yr10plus)
-  params$p_reactivate_new <- p_reactivate_new
-  params$p_reactivate_est <- p_reactivate_est
-  params$p_reactivate_ltfu <- p_reactivate_ltfu
-  #need similar time-dependent vector for death/LTFU risk among newly enrolled
-  p_new_ltfu <- c(params$p_new_ltfu, params$p_est_ltfu, rep(0, length(3:10)))
-  p_new_die <- c(params$p_new_die, params$p_est_die, rep(0, length(3:10)))
-  params$p_new_ltfu <- p_new_ltfu
-  params$p_new_die <- p_new_die
-  
-  plhiv_new <- model_tb_new_plhiv(pop, params) #update: LTBI prev varies by country
-  
-  #initiate remaining columns to be updated each timestep
-  plhiv <- pop %>% ungroup() %>% #deaths start out as 0 (we add tb_deaths_enroll in the loop over years)
-    mutate(cases_est=0, notif_est=0, 
-           cases_ltfu=0, notif_ltfu=0,
-           tb_deaths=0, non_tb_deaths=0,
-           cum_tb_deaths=0, cum_non_tb_deaths=0,
-           #TPT outcomes start out as 0 
-           initiate_ipt_est=0, initiate_3hp_est=0, initiate_1hp_est=0, initiate_3hr_est=0,
-           tox_nohosp_ipt_est=0, tox_nohosp_3hp_est=0, tox_nohosp_1hp_est=0, tox_nohosp_3hr_est=0,
-           tox_hosp_ipt_est=0, tox_hosp_3hp_est=0, tox_hosp_1hp_est=0, tox_hosp_3hr_est=0,
-           complete_ipt_est=0, complete_3hp_est=0, complete_1hp_est=0, complete_3hr_est=0,
-           part_complete_ipt_est=0, part_complete_3hp_est=0, part_complete_1hp_est=0, part_complete_3hr_est=0,
-           #TB-TPT status - est not on TPT are not 0s - need to split up by latent status
-           #LTBI are in plhiv_ltbi instead
-           active_tb_est_tpt=0, 
-           active_tb_est_not=if_else(year==start_yr, backlog*params$p_ltbi*params$p_reactivate_est_yr1, 0),
-           no_tb_est_tpt=0, 
-           no_tb_est_not=if_else(year==start_yr, backlog*(1-params$p_ltbi), 0),
-           no_tb_est_not_tb=0,
-           #TB status - LTFU (LTBI are in plhiv_ltbi instead)
-           active_tb_ltfu_tpt=0, active_tb_ltfu_not=0,
-           no_tb_ltfu_tpt=0, no_tb_ltfu_not=0
-    )
-  plhiv <- cbind(plhiv, plhiv_new %>% select(tb_deaths_enroll)) #tb_deaths_enroll remains constant over strategies
-  
-  #LTBI separate dataframes so we can track yr since entering the model
-  plhiv_ltbi <- cbind("t"=1,
-                      pop %>% select(country, code, year, scenario, backlog),
-                      plhiv_new %>% select(ltbi_new_tpt, ltbi_new_not)) %>%
-    mutate(ltbi_est_tpt=0, 
-           ltbi_est_not=if_else(year==start_yr, backlog*params$p_ltbi*(1-params$p_reactivate_est_yr1), 0),
-           ltbi_ltfu_tpt=0, ltbi_ltfu_not=0) %>%
-    select(-backlog)
-  #model TB cases/notifications and TPT initiation among previously enrolled PWH
-  plhiv_est <- model_outcomes_est_plhiv(plhiv %>% filter(year==start_yr), 
-                                        plhiv_ltbi %>% filter(year==start_yr), 
-                                        params)
-  
-  #merge TPT status and case updates back into plhiv and plhiv_ltbi - replace works best for conditional replacement
-  plhiv_ltbi <- plhiv_ltbi %>% mutate(ltbi_est_tpt=replace(ltbi_est_tpt, year==start_yr, plhiv_est$ltbi_est_tpt),
-                                      ltbi_est_not=replace(ltbi_est_not, year==start_yr, plhiv_est$ltbi_est_not),
-                                      ltbi_ltfu_tpt=replace(ltbi_ltfu_tpt, year==start_yr, plhiv_est$ltbi_ltfu_tpt),
-                                      ltbi_ltfu_not=replace(ltbi_ltfu_not, year==start_yr, plhiv_est$ltbi_ltfu_not))
-  plhiv <- plhiv %>% ungroup() %>% mutate(cases_est=replace(cases_est, year==start_yr, plhiv_est$cases_est),
-                                          notif_est=replace(notif_est, year==start_yr, plhiv_est$notif_est),
-                                          tb_deaths_enroll=replace(tb_deaths_enroll, year==start_yr, tb_deaths_enroll[year==start_yr]+plhiv_est$tb_deaths_enroll),
-                                          initiate_ipt_est=replace(initiate_ipt_est, year==start_yr, plhiv_est$initiate_ipt_est),
-                                          initiate_3hp_est=replace(initiate_3hp_est, year==start_yr, plhiv_est$initiate_3hp_est),
-                                          initiate_1hp_est=replace(initiate_1hp_est, year==start_yr, plhiv_est$initiate_1hp_est),
-                                          initiate_3hr_est=replace(initiate_3hr_est, year==start_yr, plhiv_est$initiate_3hr_est),
-                                          tox_nohosp_ipt_est=replace(tox_nohosp_ipt_est, year==start_yr, plhiv_est$tox_nohosp_ipt_est),
-                                          tox_nohosp_3hp_est=replace(tox_nohosp_3hp_est, year==start_yr, plhiv_est$tox_nohosp_3hp_est),
-                                          tox_nohosp_1hp_est=replace(tox_nohosp_1hp_est, year==start_yr, plhiv_est$tox_nohosp_1hp_est),
-                                          tox_nohosp_3hr_est=replace(tox_nohosp_3hr_est, year==start_yr, plhiv_est$tox_nohosp_3hr_est),
-                                          tox_hosp_ipt_est=replace(tox_hosp_ipt_est, year==start_yr, plhiv_est$tox_hosp_ipt_est),
-                                          tox_hosp_3hp_est=replace(tox_hosp_3hp_est, year==start_yr, plhiv_est$tox_hosp_3hp_est),
-                                          tox_hosp_1hp_est=replace(tox_hosp_1hp_est, year==start_yr, plhiv_est$tox_hosp_1hp_est),
-                                          tox_hosp_3hr_est=replace(tox_hosp_3hr_est, year==start_yr, plhiv_est$tox_hosp_3hr_est),
-                                          complete_ipt_est=replace(complete_ipt_est, year==start_yr, plhiv_est$complete_ipt_est),
-                                          complete_3hp_est=replace(complete_3hp_est, year==start_yr, plhiv_est$complete_3hp_est),
-                                          complete_1hp_est=replace(complete_1hp_est, year==start_yr, plhiv_est$complete_1hp_est),
-                                          complete_3hr_est=replace(complete_3hr_est, year==start_yr, plhiv_est$complete_3hr_est),
-                                          part_complete_ipt_est=replace(part_complete_ipt_est, year==start_yr, plhiv_est$part_complete_ipt_est),
-                                          part_complete_3hp_est=replace(part_complete_3hp_est, year==start_yr, plhiv_est$part_complete_3hp_est),
-                                          part_complete_1hp_est=replace(part_complete_1hp_est, year==start_yr, plhiv_est$part_complete_1hp_est),
-                                          part_complete_3hr_est=replace(part_complete_3hr_est, year==start_yr, plhiv_est$part_complete_3hr_est),
-                                          active_tb_est_tpt=replace(active_tb_est_tpt, year==start_yr, plhiv_est$active_tb_est_tpt),
-                                          active_tb_est_not=replace(active_tb_est_not, year==start_yr, plhiv_est$active_tb_est_not),
-                                          no_tb_est_tpt=replace(no_tb_est_tpt, year==start_yr, plhiv_est$no_tb_est_tpt),
-                                          no_tb_est_not=replace(no_tb_est_not, year==start_yr, plhiv_est$no_tb_est_not),
-                                          no_tb_est_not_tb=replace(no_tb_est_not_tb, year==start_yr, plhiv_est$no_tb_est_not_tb),
-                                          active_tb_ltfu_tpt=replace(active_tb_ltfu_tpt, year==start_yr, plhiv_est$active_tb_ltfu_tpt),
-                                          active_tb_ltfu_not=replace(active_tb_ltfu_not, year==start_yr, plhiv_est$active_tb_ltfu_not),
-                                          no_tb_ltfu_tpt=replace(no_tb_ltfu_tpt, year==start_yr, plhiv_est$no_tb_ltfu_tpt),
-                                          no_tb_ltfu_not=replace(no_tb_ltfu_not, year==start_yr, plhiv_est$no_tb_ltfu_not)
-  )
-  
-  #transform LTBI states into matrix that tracks time t
-  plhiv_ltbi <- do.call("rbind", replicate(10, plhiv_ltbi, simplify=F))
-  ts <- unlist(lapply(1:10, function(x) rep(x, nrow(plhiv_new))))
-  plhiv_ltbi <- plhiv_ltbi %>% mutate(t=ts)
-  plhiv_ltbi <- plhiv_ltbi %>% mutate(ltbi_new_tpt=if_else(t==1, ltbi_new_tpt, 0),
-                                      ltbi_new_not=if_else(t==1, ltbi_new_not, 0),
-                                      ltbi_est_tpt=if_else(t==1, ltbi_est_tpt, 0),
-                                      ltbi_est_not=if_else(t==1, ltbi_est_not, 0),
-                                      ltbi_ltfu_tpt=if_else(t==1, ltbi_ltfu_tpt, 0),
-                                      ltbi_ltfu_not=if_else(t==1, ltbi_ltfu_not, 0))
-  plhiv_ltbi <- plhiv_ltbi %>% mutate(p_reactivate_new=p_reactivate_new[t],
-                                      p_reactivate_est=p_reactivate_est[t],
-                                      p_reactivate_ltfu=p_reactivate_ltfu[t])
-  
-  #combine plhiv with newly enrolled and add enrollment deaths for 2023 only (later years gets added in loop)
-  plhiv <- bind_cols(plhiv, plhiv_new %>% select(-starts_with("ltbi"), -tb_deaths_enroll)) #LTBI goes in plhiv_ltbi instead
-  plhiv <- plhiv %>% mutate(tb_deaths=if_else(year==start_yr, tb_deaths_enroll, tb_deaths),
-                            cum_tb_deaths=if_else(year==start_yr, tb_deaths_enroll, cum_tb_deaths))
-  
-  #each year, calculate TPT initiation, events, completion
-  plhiv_all <- plhiv %>% filter(year==start_yr)
-  plhiv_ltbi_start <- plhiv_ltbi %>% filter(year==start_yr)
-  #convert plhiv_ltbi_all to list of matrices for easier multiplication by reactivation over time
-  plhiv_ltbi_start <- sapply(c('ltbi_new_tpt', 'ltbi_new_not', 'ltbi_est_tpt', 
-                               'ltbi_est_not', 'ltbi_ltfu_tpt', 'ltbi_ltfu_not'), function(x)
-                                 matrix(as.numeric(as.matrix(pivot_wider(plhiv_ltbi_start %>% 
-                                                                           select("t", "code", "scenario", "year", !!as.symbol(x)),
-                                                                         names_from="t", values_from=all_of(x)) %>%
-                                                               select(-c("code", "scenario", "year")))), ncol=10), USE.NAMES=T, simplify=F)
-  plhiv_ltbi_all <- list()
-  plhiv_ltbi_all[[as.character(start_yr)]] <- plhiv_ltbi_start
-  for(i in (start_yr+1):(end_yr)) {
-    if(i<=policy_end_yr) {
-      #plhiv: mortality, reactivation, notifications don't vary over time/by country
-      #use TB mortality on ART for both treated and untreated (since we assume everyone gets notified)
-      plhiv_prev <- plhiv_all %>% filter(year==i-1) #update status from previous timestep
-      plhiv_ltbi_prev <- plhiv_ltbi_all[[as.character(i-1)]] #update status from previous timestep
-      plhiv_covg <- plhiv %>% filter(year==i) #but use covg from current timestep
-      plhiv_ltbi_covg <- plhiv_ltbi %>% filter(year==i & t==1)
-      plhiv_cur <- model_tb_plhiv(plhiv_prev, plhiv_ltbi_prev, plhiv_covg, 
-                                  plhiv_ltbi_covg, params)
-      plhiv_all <- rbind(plhiv_all, plhiv_cur[[1]])
-      plhiv_ltbi_all[[as.character(i)]] <- plhiv_cur[[2]]
-    } else { #after end of policy horizon, just model out pops from previous years
-      plhiv_prev <- plhiv_all %>% filter(year==i-1)
-      plhiv_ltbi_prev <- plhiv_ltbi_all[[as.character(i-1)]] #update status from previous timestep
-      plhiv_covg <- plhiv %>% filter(year==policy_end_yr) %>% mutate(year=i)
-      plhiv_covg[, 5:ncol(plhiv_covg)] <- 0 #empty/0s to use in the model
-      plhiv_ltbi_covg <- plhiv_ltbi %>% filter(year==policy_end_yr & t==1)
-      plhiv_ltbi_covg[, 5:ncol(plhiv_ltbi_covg)] <- 0 #empty/0s to use in the model
-      plhiv_cur <- model_tb_plhiv(plhiv_prev, plhiv_ltbi_prev, plhiv_covg, 
-                                  plhiv_ltbi_covg, plhiv_params)
-      plhiv_all <- rbind(plhiv_all, plhiv_cur[[1]])
-      plhiv_ltbi_all[[as.character(i)]] <- plhiv_cur[[2]]
-    }
-  }
-  
-  plhiv_all <- plhiv_all %>% select(-tb_deaths_enroll) #now added to tb_deaths, can remove
-  
-  #move 2nd column of ltbi_new to prev so that "new" is 1st yr only
-  for(i in 1:length(plhiv_ltbi_all)) {
-    plhiv_ltbi_all[[i]][["ltbi_est_tpt"]][,2] <- plhiv_ltbi_all[[i]][["ltbi_est_tpt"]][,2] +
-      plhiv_ltbi_all[[i]][["ltbi_new_tpt"]][,2]
-    plhiv_ltbi_all[[i]][["ltbi_new_tpt"]][,2] <- 0
-    plhiv_ltbi_all[[i]][["ltbi_est_not"]][,2] <- plhiv_ltbi_all[[i]][["ltbi_est_not"]][,2] +
-      plhiv_ltbi_all[[i]][["ltbi_new_not"]][,2]
-    plhiv_ltbi_all[[i]][["ltbi_new_not"]][,2] <- 0
-  }
-  #move LTBI sizes back into plhiv_all (no longer need tracking by t)
-  plhiv_ltbi_all <- sapply(names(plhiv_ltbi_all), function(x)
-    sapply(names(plhiv_ltbi_all[[1]]), function(y)
-      rowSums(plhiv_ltbi_all[[x]][[y]]), USE.NAMES=T, simplify=F), USE.NAMES=T, simplify=F)
-  plhiv_ltbi_all <- as.data.frame(bind_rows(plhiv_ltbi_all, .id="year"))
-  plhiv_all <- cbind(plhiv_all, plhiv_ltbi_all %>% select(-year))
-  
-  #combine across TPT and Not TPT, Est and New groups - so same format as contacts dataframe
-  plhiv_all <- plhiv_all %>% 
-    mutate(ltfu=ltbi_ltfu_tpt + active_tb_ltfu_tpt + no_tb_ltfu_tpt + 
-             ltbi_ltfu_not + active_tb_ltfu_not + no_tb_ltfu_not) %>% #keep track of LTFU for costs (no ART costs)
-    mutate(no_tb_est_not=no_tb_est_not + no_tb_est_not_tb,
-           no_tb_new_not=no_tb_new_not + no_tb_new_not_tb) %>%
-    select(-c(no_tb_est_not_tb, no_tb_new_not_tb)) #remove this so consistent naming across variables - no longer need to track it
-  plhiv_comb <- pivot_longer(plhiv_all, cols=c(ends_with("_tpt"), ends_with("_not")),
-                             names_to=c(".value", "tpt_status"), 
-                             names_sep="_(?=[^_]+$)") #this is regex for "last underscore only"
-  col_sep <- which(names(plhiv_comb)=="tpt_status")
-  plhiv_comb <- plhiv_comb %>% group_by_at(1:(col_sep-1)) %>%
-    summarise_at(vars(-tpt_status), sum)
-  plhiv_comb <- pivot_longer(plhiv_comb, cols=c(ends_with("_new"), ends_with("_est"),
-                                                ends_with("_ltfu"),
-                                                -ends_with("covg_new"), 
-                                                -ends_with("covg_prev"),
-                                                -starts_with("plhiv")),
-                             names_to=c(".value", "art_status"),
-                             names_sep="_(?=[^_]+$)")
-  
-  col_sep <- which(names(plhiv_comb)=="art_status")
-  plhiv_comb <- plhiv_comb %>% group_by_at(1:(col_sep-1)) %>%
-    summarise_at(vars(-art_status), ~sum(., na.rm=T)) #NAs are because no LTFU on initiation (so ipt_initiate_ltfu=NA, etc.)
-  
-  if(FALSE) {
-    #calculate DALYs
-    plhiv_comb <- calc_dalys(as.data.table(plhiv_comb), "PLHIV", params$life_exp_plhiv, 
-                             params$dw_plhiv_tb, params$dw_plhiv_art, 
-                             params$dw_plhiv_no_art, 
-                             params$dur_tb_tx, 
-                             params$disc_fac, start_yr)
-  }
-  
-  plhiv_comb <- calc_costs(plhiv_comb, "plhiv", params, 
-                           params, params$disc_fac, start_yr)
-  
-  #cost-effectiveness code would go here
-  
-  plhiv_comb <- plhiv_comb %>% select(-c(backlog, cum_disc_costs))
-  return(plhiv_comb)
-}
-
+#wrapper function to run the whole model for PLHIV 
 run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, option_split) {
   policy_horizon <- 10 #for now, implement over 10 years and calculate costs/outcomes over 10 years
   analytic_horizon <- 10
@@ -2629,7 +1882,6 @@ run_model_contacts <- function(country_name, regimen_child, regimen_adol, regime
 }
 
 
-
 regimens <- c("3HP", "1HP", "3HR", "6H", "None")
 countries <- c("Ethiopia", "India", "Nigeria", "South Africa", "Zambia")
 scenarios <- c("TPT Scaleup", "Comparator (no TPT)")
@@ -2643,75 +1895,33 @@ cost_colors <- data.frame(row.names=c("cost_tx", "cost_art", "cost_contact",
                                    "6H drugs & clinic visits", "TPT toxicity management",
                                    "Implementation costs (short-course TPT)")
                           )
-options_split <- c("Equal coverage across new and previously enrolled PLHIV"=1,
-                   "Prioritize newly enrolled PLHIV"=2)
-option_split <- options_split[[1]]
+options_split <- c("Equal across new & previously enrolled PLHIV"=1,
+                   "Prioritize PLHIV newly enrolled on ART"=2)
 
 #Pt 1: User Interface (UI) - framework (structure for app's appearance)
 ui <- navbarPage(
   title="TB Preventive Treatment Budget Impact Tool",
   theme=bs_theme(version=5, bootswatch="flatly"),
   tabPanel(
-    title="Main",
-    sidebarLayout(
-      sidebarPanel(
-        width=2, 
-        #h3("Specify changes to inputs"),
-        shiny::selectInput(
-          inputId="country",
-          label="Select a country",
-          choices=countries
-          ),
-        h4("Submit changes"),
-        actionButton("go", "Submit")
-      ),
-      mainPanel(
-        h2("Results"),
-        headerPanel(""),
-        fluidRow(column(6, plotlyOutput("plhiv_costs_sum")),
-                 column(6, plotlyOutput("plhiv_initiate"))),
-        headerPanel(""),
-        fluidRow(column(6, plotlyOutput("child_costs_sum")),
-                 column(6, plotlyOutput("child_initiate"))),
-        headerPanel(""),
-        fluidRow(column(6, plotlyOutput("adol_costs_sum")),
-                 column(6, plotlyOutput("adol_initiate"))),
-        headerPanel(""),
-        fluidRow(column(6, plotlyOutput("adult_costs_sum")),
-                 column(6, plotlyOutput("adult_initiate")))
-      )
-    )
-  ),
-  tabPanel(
-    title="PLHIV Results",
-    h2("Additional results for PLHIV"),
-    headerPanel(""),
-    fluidRow(column(5, plotlyOutput("plhiv_costs_tpt_detail")),
-              column(7, plotlyOutput("plhiv_costs_comp_detail"))),
-    headerPanel(""),
-    fluidRow(column(5, plotlyOutput("plhiv_costs_tpt_detail_art")),
-              column(7, plotlyOutput("plhiv_costs_comp_detail_art")))
-  ),
-  tabPanel(
-    title="HH Contact Results",
-    h2("Additional results for Household Contacts"),
-    headerPanel(""),
-    fluidRow(column(5, plotlyOutput("child_costs_tpt_detail")),
-             column(7, plotlyOutput("child_costs_comp_detail"))),
-    headerPanel(""),
-    fluidRow(column(5, plotlyOutput("adol_costs_tpt_detail")),
-             column(7, plotlyOutput("adol_costs_comp_detail"))),
-    headerPanel(""),
-    fluidRow(column(5, plotlyOutput("adult_costs_tpt_detail")),
-             column(7, plotlyOutput("adult_costs_comp_detail")))
-
-  ),
-  tabPanel(
-    title="Specify Coverage",
+    title="Main Options",
     h2("Submit changes when finished"),
     actionButton("go_covg", "Submit"),
+    h2("Select a country"),
+    selectInput(
+      inputId="country",
+      label=NULL,
+      choices=countries
+    ),
     h2("Specify coverage by TPT regimen, year, and population"),
     h4("Coverage for PLHIV"),
+    fluidRow(
+      column(3, HTML('<b> How to split TPT coverage across PLHIV? </b>')),
+      column(9, selectInput(inputId="plhiv_option_split",
+                            label=NULL,
+                            width='50%',
+                            choices=options_split,
+                            selected=options_split[[2]]))
+    ),
     fluidRow(tags$style("#split_plhiv_2024 {color:red;}"),
       column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
              column(2, numericInput(
@@ -2956,7 +2166,7 @@ ui <- navbarPage(
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
              column(2, numericInput(
                inputId="num_child_2024",
-               label=strong("Number initiating TPT"),
+               label=strong("Number investigated"),
                value=0)),
              column(1, numericInput(
                inputId="split_child_3hp_2024", 
@@ -3236,7 +2446,7 @@ ui <- navbarPage(
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
              column(2, numericInput(
                inputId="num_adol_2024",
-               label=strong("Number initiating TPT"),
+               label=strong("Number investigated"),
                value=0)),
              column(1, numericInput(
                inputId="split_adol_3hp_2024", 
@@ -3516,7 +2726,7 @@ ui <- navbarPage(
              column(1, HTML('<br> <p style="text-align:right;padding-bottom:15px;padding-top:15px;"> <b> 2024 </b> </p>')),
              column(2, numericInput(
                inputId="num_adult_2024",
-               label=strong("Number initiating TPT"),
+               label=strong("Number investigated"),
                value=0)),
              column(1, numericInput(
                inputId="split_adult_3hp_2024", 
@@ -3793,8 +3003,9 @@ ui <- navbarPage(
                  column(2, textOutput('split_adult_2033'))))
     
   ),
+  
   tabPanel(
-    title="Other Options",
+    title="Advanced Options",
     h2("Submit changes when finished"),
     actionButton("go_advanced", "Submit"),
     h2("Specify optional parameters"),
@@ -4011,6 +3222,46 @@ ui <- navbarPage(
         value=0)))
   ),
   tabPanel(
+    title="Main Results",
+    h2("Results"),
+    headerPanel(""),
+    fluidRow(column(6, plotlyOutput("plhiv_costs_sum")),
+             column(6, plotlyOutput("plhiv_initiate"))),
+    headerPanel(""),
+    fluidRow(column(6, plotlyOutput("child_costs_sum")),
+             column(6, plotlyOutput("child_initiate"))),
+    headerPanel(""),
+    fluidRow(column(6, plotlyOutput("adol_costs_sum")),
+             column(6, plotlyOutput("adol_initiate"))),
+    headerPanel(""),
+    fluidRow(column(6, plotlyOutput("adult_costs_sum")),
+             column(6, plotlyOutput("adult_initiate")))
+  ),
+  tabPanel(
+    title="PLHIV Results",
+    h2("Additional results for PLHIV"),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("plhiv_costs_tpt_detail")),
+             column(7, plotlyOutput("plhiv_costs_comp_detail"))),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("plhiv_costs_tpt_detail_art")),
+             column(7, plotlyOutput("plhiv_costs_comp_detail_art")))
+  ),
+  tabPanel(
+    title="HH Contact Results",
+    h2("Additional results for Household Contacts"),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("child_costs_tpt_detail")),
+             column(7, plotlyOutput("child_costs_comp_detail"))),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("adol_costs_tpt_detail")),
+             column(7, plotlyOutput("adol_costs_comp_detail"))),
+    headerPanel(""),
+    fluidRow(column(5, plotlyOutput("adult_costs_tpt_detail")),
+             column(7, plotlyOutput("adult_costs_comp_detail")))
+    
+  ),
+  tabPanel(
     title="Download Results",
     sidebarLayout(
       sidebarPanel(
@@ -4028,26 +3279,25 @@ ui <- navbarPage(
   tabPanel(
     title="Help",
     h4("Instructions"),
-    HTML("<br> This tool can be used to estimate the costs of scaling up a TB preventive treatment program for people with HIV (PLHIV) and/or household contacts of notified TB patients (contacts). Costs are calculated for a <i> TPT Scenario </i>, which the user specifies, and a <i> Comparator Scenario </i>, which includes 0% TPT coverage and 0% coverage of household contact investigation"),
-    HTML("<br> <br> To get started, navigate to the <b> Main </b> tab using the toolbar on the top of your browser screen. "),
-    HTML("Select a country using the dropdown menu, then select the desired coverage level (proportion of eligible PLHIV or household contacts that initiate TPT each year) and regimen (3HP, 1HP, 3HR, 6H, or None/No TPT), and then click the <b> Submit </b> button on the top left, which runs the model and updates the figures."),
-    HTML("For household contacts, selecting None as the regimen type indicates coverage of contact investigation only. This option is not available for PLHIV."),
-    HTML("Note that coverage is defined as the percent of the eligible target population initiating TPT. Because of < 100% TPT acceptance, coverage can be effectively capped at < 100% - but this can be adjusted in <b> Other Options </b> (see below)."),
-    HTML("<br> <br> The tool will automatically populate with parameters relevant to a given country (e.g., size of target populations, unit costs) and regimen (e.g., drug costs and completion), and will assume the same coverage level over a 5-year period."),
-    HTML("These automatic updates can be manually changed in the <b> Advanced Coverage Options </b> and <b> Other Options </b> tabs."),
-    HTML("Be sure to click the <b> Submit </b> button after making any changes in either tab. <br>"),
-    HTML("<br> The <b> Advanced Coverage Options </b> tab allows users to specify TPT coverage for each target population that varies by year and can include multiple TPT regimens. Changes to this tab apply to the <i> TPT Scenario </i> only. In this tab: 
-         <ul>
-         <li> For PLHIV, <b> TPT coverage </b> is defined as the percent (from 0-100%) of eligible PLHIV that initiate any type of TPT in a given year. </li>
-         <li> For household contacts, <b> TPT coverage </b> is defined as the percent (from 0-100%) of eligible contacts that are investigated for TB and/or initiate any type of TPT in a given year. </li>
-         <li> For both PLHIV and contacts, the remaining columns in <b> Advanced Coverage Options </b> indicate the split of TPT coverage by regimen (and for household contacts, no TPT, with contact investigation only). Note that these percentages must sum to 100%. </li>
-         </ul>"),
-    HTML("For example, specifying 40% total coverage for contacts aged 5-14 years, with Percent 3HP = 50%, Percent 1HP = 25%, Percent 3HR = 0%, Percent 6H = 0%, and Percent No TPT = 25%, would mean that 20% of eligible household contacts 5-14 intitiate 3HP, 10% initiate 1HP, 10% receive contact investigation only but don't initiate any TPT, and 60% are not investigated (and do not initiate TPT)."),
-    HTML("<br> <br> The <b> Other Options </b> tab allows users to update the underlying sizes of the target populations, change TPT acceptance rates, and impute unit costs. Changes to this tab apply to both the <i> TPT Scenario </i> and the <i> Comparator Scenario </i>."),
-    HTML("Some definitions relevant to parameters in the <b> Other Options </b> tab are included below:
+    HTML("<br> This tool can be used to estimate the costs of scaling up a TB preventive treatment program for people with HIV (PLHIV) and/or household contacts of notified TB patients (contacts). Costs are calculated for a <i> TPT Scenario </i>, which the user specifies, and a <i> Comparator Scenario </i>, which includes 0% TPT coverage and 0% coverage of household contact investigation."),
+    HTML("<br> <br> To get started, navigate to the <b> Main Options </b> tab using the toolbar on the top of your browser screen and select a country using the dropdown menu."),
+    HTML("For both PLHIV and household contacts, you can also specify the number of individuals to initiate TPT each year and the percent of those initiating TPT that should receive each of 4 regimens (3HP, 1HP, 3HR, and 6H) over a 10-year time horizon, under the <i> TPT Scenario</i>."),
+    HTML("For PLHIV, the number receiving TPT is defined as the number of eligible PLHIV that initiate any type of TPT in a given year. "),
+    HTML("For household contacts, you instead define the number of eligible contacts that are investigated for TB and/or initiate any type of TPT in a given year. "),
+    HTML("For household contacts, selecting None as the regimen type indicates coverage of contact investigation only. This option is not available for PLHIV because those on ART are assumed to be investigated for TB during routine clinic visits. "),
+    HTML("For example, specifying that 10,000 contacts aged 5-14 years should be investigated, with % 3HP = 50%, % 1HP = 25%, % 3HR = 0%, % 6H = 0%, and % No TPT = 25% would mean that 5,000 eligible household contacts 5-14 intitiate 3HP,  2500 initiate 1HP,  2500 receive contact investigation only but don't initiate any TPT, and the remainder are not investigated (and do not initiate TPT). "),
+    HTML("For PLHIV, you can also specify whether or not to prioritize PLHIV that have been newly enrolled on PLHIV for TPT. "),
+    HTML("If this option is selected, then coverage of eligible newly enrolled PLHIV will be maxed out before any PLHIV already in care receive TPT. "),
+    HTML("Otherwise, the tool will set the percent of PLHIV initiating TPT to be equal across both newly enrolled and established PLHIV. "),
+    HTML("Note that coverage is defined as the percent of the eligible target population initiating TPT. Because of < 100% TPT acceptance, coverage can be effectively capped at < 100% - but this can be adjusted in <b> Advanced Options </b> (see below)."),
+    HTML("If you specify a larger number of PLHIV or household contacts to receive TPT in any given year than the model estimates are eligible, coverage will be maxed out and a warning message will pop up. "),
+    HTML("<br> <br> Be sure to click the <b> Submit </b> button after making any changes in either tab."),
+    HTML("The tool will automatically populate with parameters relevant to a given country (e.g., size of target populations, unit costs) and regimen (e.g., drug costs and completion)."),
+    HTML("<br> <br> The <b> Advanced Options </b> tab allows users to update the underlying sizes of the target populations, change TPT acceptance rates, and impute unit costs. Changes to this tab apply to both the <i> TPT Scenario </i> and the <i> Comparator Scenario </i>."),
+    HTML("Some definitions relevant to parameters in the <b> Advanced Options </b> tab are included below:
          <ul>
          <li> <b> PLHIV target population sizes </b>: users can manually specify the number of PLHIV newly enrolled on ART each year that would be eligible for TPT, as well as the number of PLHIV in 2024 that had been enrolled on ART in a previous year, had not yet received TPT, and are eligible for TPT. The number of previously-enrolled PLHIV eligible for TPT in subsequent years is automatically calculated by the model as a function of the number previously enrolled in 2024, the numbers newly enrolled each year, and TPT coverage each year. </li>
-         <li> <b> Household contact target population sizes </b>: users can manually specify the number of TB notifications each year. The number of notifications is combined with country-specific estimates of household size (by age) and user-provided TPT coverage for contacts, to calculate the number of contacts, by age, that receive TPT each year. </li>
+         <li> <b> Household contact target population sizes </b>: users can manually specify the number of TB notifications each year. The number of notifications is combined with country-specific estimates of household size (by age) to calculate the number of household contacts that are eligible for TPT each year. </li>
          <li> <b> TPT acceptance and refusal </b>: the tool automatically assumes 73.5% TPT acceptance. That is, 26.5% of eligible individuals offered TPT are assumed to refuse it. Therefore, TPT coverage cannot effectively equal 100% unless this parameter is also set at 100%. </li>
          <li> <b> TPT drug costs </b>: specify the cost per full course of TPT (drugs only, in US Dollars) for each target population and regimen. There is no need to specify costs for regimens that are not being included in the <i> TPT Scenario </i> you have specified. </li>
          <li> <b> Other unit costs </b>: specify the cost of other components of TB prevention and treatment (in US Dollars). </li>
@@ -4381,7 +3631,7 @@ server <- function(input, output, session) {
     updateNumericInput(session, "notif_2033", value=round(pop_calcs %>% filter(country==input$country & year==2033) %>% pull(tb_notif_new)))
   })
   
-  rv <- eventReactive(input$go|input$go_advanced|input$go_covg, {
+  rv <- eventReactive(input$go_advanced|input$go_covg, {
     #update parameters
     country_code <- country_info %>% filter(country==input$country) %>% pull(code)
     cost_params <- unlist(cost_params[[country_code]])
@@ -4396,6 +3646,7 @@ server <- function(input, output, session) {
     plhiv_params$c_3hp <- input$c_3hp_plhiv
     plhiv_params$c_3hr <- input$c_3hr_plhiv
     plhiv_params$c_ipt <- input$c_6h_plhiv
+    option_split <- input$plhiv_option_split
     child_params$c_1hp <- input$c_1hp_child
     child_params$c_3hp <- input$c_3hp_child
     child_params$c_3hr <- input$c_3hr_child
