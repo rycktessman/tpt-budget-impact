@@ -769,7 +769,7 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
 
   d <- d %>% ungroup() 
   #Step 1: TPT initiation
-  #new
+  #new -  only year 1 in "new" get initiated at the "new" coverage level - others are initiated at the "est" covg level.
   d <- d %>% mutate(initiate_ipt_new=(as.vector(d_ltbi[,1,"ltbi_new_not"]) + no_tb_new)*initiate_ipt_covg_new,
                     initiate_3hp_new=(as.vector(d_ltbi[,1,"ltbi_new_not"]) + no_tb_new)*initiate_3hp_covg_new,
                     initiate_1hp_new=(as.vector(d_ltbi[,1,"ltbi_new_not"]) + no_tb_new)*initiate_1hp_covg_new,
@@ -795,10 +795,11 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
                     part_complete_3hr_new=initiate_3hr_new - 
                       (complete_3hr_new + tox_nohosp_3hr_new + tox_hosp_3hr_new))
   #need to keep track of t (year since entering model) for the explicitly ltbi variables - keep matrix format
-  initiate_ipt_ltbi_new <- d_ltbi[,,"ltbi_new_not"]*d$initiate_ipt_covg_new 
-  initiate_3hp_ltbi_new <- d_ltbi[,,"ltbi_new_not"]*d$initiate_3hp_covg_new
-  initiate_1hp_ltbi_new <- d_ltbi[,,"ltbi_new_not"]*d$initiate_1hp_covg_new
-  initiate_3hr_ltbi_new <- d_ltbi[,,"ltbi_new_not"]*d$initiate_3hr_covg_new
+  #only year 1 in "new" get initiated at the "new" coverage level - others are initiated at the "est" covg level. 
+  initiate_ipt_ltbi_new <- as.vector(d_ltbi[,1,"ltbi_new_not"]*d$initiate_ipt_covg_new) 
+  initiate_3hp_ltbi_new <- as.vector(d_ltbi[,1,"ltbi_new_not"]*d$initiate_3hp_covg_new)
+  initiate_1hp_ltbi_new <- as.vector(d_ltbi[,1,"ltbi_new_not"]*d$initiate_1hp_covg_new)
+  initiate_3hr_ltbi_new <- as.vector(d_ltbi[,1,"ltbi_new_not"]*d$initiate_3hr_covg_new)
   complete_ipt_ltbi_new <- initiate_ipt_ltbi_new*params$p_complete_ipt 
   complete_3hp_ltbi_new <- initiate_3hp_ltbi_new*params$p_complete_3hp
   complete_1hp_ltbi_new <- initiate_1hp_ltbi_new*params$p_complete_1hp
@@ -808,12 +809,16 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
   part_complete_1hp_ltbi_new <- initiate_1hp_ltbi_new*(1-(params$p_complete_1hp + params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
   part_complete_3hr_ltbi_new <- initiate_3hr_ltbi_new*(1-(params$p_complete_3hr + params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
   
-  #established 
+  #established - include yrs 2 + of "new" here too
   d <- d %>% 
-    mutate(initiate_ipt_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"])) + no_tb_est_not)*initiate_ipt_covg_est, 
-           initiate_3hp_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"])) + no_tb_est_not)*initiate_3hp_covg_est,
-           initiate_1hp_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"])) + no_tb_est_not)*initiate_1hp_covg_est,
-           initiate_3hr_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"])) + no_tb_est_not)*initiate_3hr_covg_est,
+    mutate(initiate_ipt_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"]) + rowSums(d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"])) +
+                               no_tb_est_not)*initiate_ipt_covg_est, 
+           initiate_3hp_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"]) + rowSums(d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"])) +
+                               no_tb_est_not)*initiate_3hp_covg_est,
+           initiate_1hp_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"]) + rowSums(d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"])) +
+                               no_tb_est_not)*initiate_1hp_covg_est,
+           initiate_3hr_est=(as.vector(rowSums(d_ltbi[,,"ltbi_est_not"]) + rowSums(d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"])) +
+                               no_tb_est_not)*initiate_3hr_covg_est,
            tox_nohosp_ipt_est=initiate_ipt_est*params$p_tox_nohosp_ipt,
            tox_nohosp_3hp_est=initiate_3hp_est*params$p_tox_nohosp_3hp,
            tox_nohosp_1hp_est=initiate_1hp_est*params$p_tox_nohosp_1hp,
@@ -843,30 +848,44 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
   part_complete_3hp_ltbi_est <- initiate_3hp_ltbi_est*(1-(params$p_complete_3hp + params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp))
   part_complete_1hp_ltbi_est <- initiate_1hp_ltbi_est*(1-(params$p_complete_1hp + params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
   part_complete_3hr_ltbi_est <- initiate_3hr_ltbi_est*(1-(params$p_complete_3hr + params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
-
+  #for new yrs 2+
+  initiate_ipt_ltbi_new2 <- d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"]*d$initiate_ipt_covg_est 
+  initiate_3hp_ltbi_new2 <- d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"]*d$initiate_3hp_covg_est
+  initiate_1hp_ltbi_new2 <- d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"]*d$initiate_1hp_covg_est
+  initiate_3hr_ltbi_new2 <- d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"]*d$initiate_3hr_covg_est
+  complete_ipt_ltbi_new2 <- initiate_ipt_ltbi_new2*params$p_complete_ipt 
+  complete_3hp_ltbi_new2 <- initiate_3hp_ltbi_new2*params$p_complete_3hp
+  complete_1hp_ltbi_new2 <- initiate_1hp_ltbi_new2*params$p_complete_1hp
+  complete_3hr_ltbi_new2 <- initiate_3hr_ltbi_new2*params$p_complete_3hr
+  part_complete_ipt_ltbi_new2 <- initiate_ipt_ltbi_new2*(1-(params$p_complete_ipt + params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt))
+  part_complete_3hp_ltbi_new2 <- initiate_3hp_ltbi_new2*(1-(params$p_complete_3hp + params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp))
+  part_complete_1hp_ltbi_new2 <- initiate_1hp_ltbi_new2*(1-(params$p_complete_1hp + params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp))
+  part_complete_3hr_ltbi_new2 <- initiate_3hr_ltbi_new2*(1-(params$p_complete_3hr + params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr))
   
   #Step 2: update TB status based on TPT initiation
-  #new
+  #new 
   d <- d %>% 
     mutate(no_tb_new_tpt=initiate_ipt_new + initiate_3hp_new + initiate_1hp_new + initiate_3hr_new -
-             as.vector(rowSums(initiate_ipt_ltbi_new + initiate_3hp_ltbi_new + initiate_1hp_ltbi_new + initiate_3hr_ltbi_new)) + #no LTBI to begin with
-             as.vector(rowSums(initiate_ipt_ltbi_new))*params$p_complete_ipt*params$eff_ipt + #full IPT completion
-             as.vector(rowSums(initiate_3hp_ltbi_new))*params$p_complete_3hp*params$eff_3hp + #full 3HP completion
-             as.vector(rowSums(initiate_1hp_ltbi_new))*params$p_complete_1hp*params$eff_1hp + #full 1HP completion
-             as.vector(rowSums(initiate_3hr_ltbi_new))*params$p_complete_3hr*params$eff_3hr + #full 3hr completion
-             as.vector(rowSums(initiate_ipt_ltbi_new))*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-params$p_tox_nohosp_ipt)*params$eff_ipt/2 + #partial IPT completion
-             as.vector(rowSums(initiate_3hp_ltbi_new))*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-params$p_tox_nohosp_3hp)*params$eff_3hp/2 + #partial 3HP completion
-             as.vector(rowSums(initiate_1hp_ltbi_new))*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-params$p_tox_nohosp_1hp)*params$eff_1hp/2 + #partial 1HP completion
-             as.vector(rowSums(initiate_3hr_ltbi_new))*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-params$p_tox_nohosp_3hr)*params$eff_3hr/2, #partial 3hr completion,
+             as.vector(initiate_ipt_ltbi_new + initiate_3hp_ltbi_new + initiate_1hp_ltbi_new + initiate_3hr_ltbi_new) + #no LTBI to begin with
+             as.vector(initiate_ipt_ltbi_new)*params$p_complete_ipt*params$eff_ipt + #full IPT completion
+             as.vector(initiate_3hp_ltbi_new)*params$p_complete_3hp*params$eff_3hp + #full 3HP completion
+             as.vector(initiate_1hp_ltbi_new)*params$p_complete_1hp*params$eff_1hp + #full 1HP completion
+             as.vector(initiate_3hr_ltbi_new)*params$p_complete_3hr*params$eff_3hr + #full 3hr completion
+             as.vector(initiate_ipt_ltbi_new)*(1-params$p_complete_ipt-params$p_tox_hosp_ipt-params$p_tox_nohosp_ipt)*params$eff_ipt/2 + #partial IPT completion
+             as.vector(initiate_3hp_ltbi_new)*(1-params$p_complete_3hp-params$p_tox_hosp_3hp-params$p_tox_nohosp_3hp)*params$eff_3hp/2 + #partial 3HP completion
+             as.vector(initiate_1hp_ltbi_new)*(1-params$p_complete_1hp-params$p_tox_hosp_1hp-params$p_tox_nohosp_1hp)*params$eff_1hp/2 + #partial 1HP completion
+             as.vector(initiate_3hr_ltbi_new)*(1-params$p_complete_3hr-params$p_tox_hosp_3hr-params$p_tox_nohosp_3hr)*params$eff_3hr/2, #partial 3hr completion,
            no_tb_new_not=no_tb_new*
              (1-(initiate_ipt_covg_new + initiate_3hp_covg_new + 
                    initiate_1hp_covg_new + initiate_3hr_covg_new)), #no LTBI to begin with
            active_tb_new_tpt=0, #assume no PWH are wrongly assigned to TPT
            active_tb_new_not=active_tb_new)
   #need to keep track of t (year since entering model) for the explicitly ltbi variables - keep matrix format
-  d_ltbi[,,"ltbi_new_not"] <- d_ltbi[,,"ltbi_new_not"] - 
+  d_ltbi[,1,"ltbi_new_not"] <- d_ltbi[,1,"ltbi_new_not"] - 
     (initiate_ipt_ltbi_new + initiate_3hp_ltbi_new + initiate_1hp_ltbi_new + initiate_3hr_ltbi_new)
-  d_ltbi[,,"ltbi_new_tpt"] <- d_ltbi[,,"ltbi_new_tpt"] + 
+  d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"] <- d_ltbi[,2:ncol(d_ltbi),"ltbi_new_not"] -
+    (initiate_ipt_ltbi_new2 + initiate_3hp_ltbi_new2 + initiate_1hp_ltbi_new2 + initiate_3hr_ltbi_new2)
+  d_ltbi[,1,"ltbi_new_tpt"] <- d_ltbi[,1,"ltbi_new_tpt"] + 
     complete_ipt_ltbi_new*(1-params$eff_ipt) + 
     complete_3hp_ltbi_new*(1-params$eff_3hp) +
     complete_1hp_ltbi_new*(1-params$eff_1hp) +
@@ -879,13 +898,26 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
     initiate_3hp_ltbi_new*(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp) +
     initiate_1hp_ltbi_new*(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp) +
     initiate_3hr_ltbi_new*(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr)
+  d_ltbi[,2:ncol(d_ltbi),"ltbi_new_tpt"] <- d_ltbi[,2:ncol(d_ltbi),"ltbi_new_tpt"] + 
+    complete_ipt_ltbi_new2*(1-params$eff_ipt) + 
+    complete_3hp_ltbi_new2*(1-params$eff_3hp) +
+    complete_1hp_ltbi_new2*(1-params$eff_1hp) +
+    complete_3hr_ltbi_new2*(1-params$eff_3hr) +
+    part_complete_ipt_ltbi_new2*(1-params$eff_ipt/2) +
+    part_complete_3hp_ltbi_new2*(1-params$eff_3hp/2) +
+    part_complete_1hp_ltbi_new2*(1-params$eff_1hp/2) +
+    part_complete_3hr_ltbi_new2*(1-params$eff_3hr/2) +
+    initiate_ipt_ltbi_new2*(params$p_tox_nohosp_ipt + params$p_tox_hosp_ipt) +
+    initiate_3hp_ltbi_new2*(params$p_tox_nohosp_3hp + params$p_tox_hosp_3hp) +
+    initiate_1hp_ltbi_new2*(params$p_tox_nohosp_1hp + params$p_tox_hosp_1hp) +
+    initiate_3hr_ltbi_new2*(params$p_tox_nohosp_3hr + params$p_tox_hosp_3hr)
   #established
   d <- d %>% 
     mutate(no_tb_est_not=no_tb_est_not - 
-             (initiate_ipt_est - as.vector(rowSums(initiate_ipt_ltbi_est))) -
-             (initiate_3hp_est - as.vector(rowSums(initiate_3hp_ltbi_est))) -
-             (initiate_1hp_est - as.vector(rowSums(initiate_1hp_ltbi_est))) -
-             (initiate_3hr_est - as.vector(rowSums(initiate_3hr_ltbi_est))),
+             (initiate_ipt_est - as.vector(rowSums(initiate_ipt_ltbi_est) + rowSums(initiate_ipt_ltbi_new2))) -
+             (initiate_3hp_est - as.vector(rowSums(initiate_3hp_ltbi_est) + rowSums(initiate_3hp_ltbi_new2))) -
+             (initiate_1hp_est - as.vector(rowSums(initiate_1hp_ltbi_est) + rowSums(initiate_1hp_ltbi_new2))) -
+             (initiate_3hr_est - as.vector(rowSums(initiate_3hr_ltbi_est) + rowSums(initiate_3hr_ltbi_new2))),
            no_tb_est_tpt=no_tb_est_tpt + 
              as.vector(rowSums(complete_ipt_ltbi_est))*params$eff_ipt +
              as.vector(rowSums(complete_3hp_ltbi_est))*params$eff_3hp +
@@ -895,10 +927,18 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
              as.vector(rowSums(part_complete_3hp_ltbi_est))*params$eff_3hp/2 +
              as.vector(rowSums(part_complete_1hp_ltbi_est))*params$eff_1hp/2 +
              as.vector(rowSums(part_complete_3hr_ltbi_est))*params$eff_3hr/2 +
-             (initiate_ipt_est - as.vector(rowSums(initiate_ipt_ltbi_est))) +
-             (initiate_3hp_est - as.vector(rowSums(initiate_3hp_ltbi_est))) +
-             (initiate_1hp_est - as.vector(rowSums(initiate_1hp_ltbi_est))) +
-             (initiate_3hr_est - as.vector(rowSums(initiate_3hr_ltbi_est))))
+             (initiate_ipt_est - as.vector(rowSums(initiate_ipt_ltbi_est) + rowSums(initiate_ipt_ltbi_new2))) +
+             (initiate_3hp_est - as.vector(rowSums(initiate_3hp_ltbi_est) + rowSums(initiate_3hp_ltbi_new2))) +
+             (initiate_1hp_est - as.vector(rowSums(initiate_1hp_ltbi_est) + rowSums(initiate_1hp_ltbi_new2))) +
+             (initiate_3hr_est - as.vector(rowSums(initiate_3hr_ltbi_est) + rowSums(initiate_3hr_ltbi_new2))) +
+             as.vector(rowSums(complete_ipt_ltbi_new2))*params$eff_ipt +
+             as.vector(rowSums(complete_3hp_ltbi_new2))*params$eff_3hp +
+             as.vector(rowSums(complete_1hp_ltbi_new2))*params$eff_1hp +
+             as.vector(rowSums(complete_3hr_ltbi_new2))*params$eff_3hr +
+             as.vector(rowSums(part_complete_ipt_ltbi_new2))*params$eff_ipt/2 +
+             as.vector(rowSums(part_complete_3hp_ltbi_new2))*params$eff_3hp/2 +
+             as.vector(rowSums(part_complete_1hp_ltbi_new2))*params$eff_1hp/2 +
+             as.vector(rowSums(part_complete_3hr_ltbi_new2))*params$eff_3hr/2)
   #need to keep track of t (year since entering model) for the explicitly ltbi variables - keep matrix format
   d_ltbi[,,"ltbi_est_not"] <- d_ltbi[,,"ltbi_est_not"] - 
     (initiate_ipt_ltbi_est + initiate_3hp_ltbi_est + initiate_1hp_ltbi_est + initiate_3hr_ltbi_est)
@@ -995,10 +1035,12 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
   
   #progressions, and deaths from progressions - count cases here too
   d <- d %>% 
-    mutate(active_tb_new_tpt=active_tb_new_tpt + (1-params$p_die_tb_art)*as.vector(rowSums(d_ltbi[,,"ltbi_new_tpt"]%*%params$p_reactivate_new)),
-           active_tb_new_not=active_tb_new_not + (1-params$p_die_tb_art)*as.vector(rowSums(d_ltbi[,,"ltbi_new_not"]%*%params$p_reactivate_new)),
-           active_tb_est_tpt=active_tb_est_tpt + (1-params$p_die_tb_art)*as.vector(rowSums(d_ltbi[,,"ltbi_est_tpt"]%*%params$p_reactivate_est)),
-           active_tb_est_not=active_tb_est_not + (1-params$p_die_tb_art)*as.vector(rowSums(d_ltbi[,,"ltbi_est_not"]%*%params$p_reactivate_est)),
+    mutate(active_tb_new_tpt=active_tb_new_tpt + (1-params$p_die_tb_art)*as.vector(d_ltbi[,1,"ltbi_new_tpt"]*params$p_reactivate_new[1]),
+           active_tb_new_not=active_tb_new_not + (1-params$p_die_tb_art)*as.vector(d_ltbi[,1,"ltbi_new_not"]*params$p_reactivate_new[1]),
+           active_tb_est_tpt=active_tb_est_tpt + (1-params$p_die_tb_art)*as.vector(rowSums(d_ltbi[,,"ltbi_est_tpt"]%*%params$p_reactivate_est) +
+                                                                                     rowSums(d_ltbi[,2:params$yrs,"ltbi_new_tpt"]%*%params$p_reactivate_new[2:params$yrs])),
+           active_tb_est_not=active_tb_est_not + (1-params$p_die_tb_art)*as.vector(rowSums(d_ltbi[,,"ltbi_est_not"]%*%params$p_reactivate_est) +
+                                                                                     rowSums(d_ltbi[,2:params$yrs,"ltbi_new_not"]%*%params$p_reactivate_new[2:params$yrs])),
            active_tb_ltfu_tpt=active_tb_ltfu_tpt + (1-params$p_die_tb_ltfu)*as.vector(rowSums(d_ltbi[,,"ltbi_ltfu_tpt"]%*%params$p_reactivate_ltfu)),
            active_tb_ltfu_not=active_tb_ltfu_not + (1-params$p_die_tb_ltfu)*as.vector(rowSums(d_ltbi[,,"ltbi_ltfu_not"]%*%params$p_reactivate_ltfu)),
            tb_deaths=tb_deaths + 
@@ -1048,55 +1090,51 @@ model_tb_plhiv <- function(d, d_ltbi, params) {
 
   #Step 6: ART-Related Transitions
   #inflate p_LTFU since some will return the same timestep
-  #new LTFU
-  d <- d %>% 
-    mutate(no_tb_ltfu_tpt = no_tb_ltfu_tpt + 
-             params$p_new_ltfu[1]*no_tb_new_tpt/(1-params$p_ltfu_art) + 
-             params$p_est_ltfu*no_tb_est_tpt/(1-params$p_ltfu_art),
-           no_tb_ltfu_not = no_tb_ltfu_not + 
-             params$p_new_ltfu[1]*no_tb_new_not/(1-params$p_ltfu_art) + 
-             params$p_est_ltfu*no_tb_est_not/(1-params$p_ltfu_art),
-           active_tb_ltfu_tpt = active_tb_ltfu_tpt + 
-             params$p_new_ltfu[1]*active_tb_new_tpt/(1-params$p_ltfu_art) + 
-             params$p_est_ltfu*active_tb_est_tpt/(1-params$p_ltfu_art),
-           active_tb_ltfu_not = active_tb_ltfu_not + 
-             params$p_new_ltfu[1]*active_tb_new_not/(1-params$p_ltfu_art) + 
-             params$p_est_ltfu*active_tb_est_not/(1-params$p_ltfu_art),
-           no_tb_new_tpt = no_tb_new_tpt*(1-params$p_new_ltfu[1]/(1-params$p_ltfu_art)),
-           no_tb_new_not = no_tb_new_not*(1-params$p_new_ltfu[1]/(1-params$p_ltfu_art)),
-           no_tb_est_tpt = no_tb_est_tpt*(1-params$p_est_ltfu/(1-params$p_ltfu_art)),
-           no_tb_est_not = no_tb_est_not*(1-params$p_est_ltfu/(1-params$p_ltfu_art)),
-           active_tb_new_tpt = active_tb_new_tpt*(1-params$p_new_ltfu[1]/(1-params$p_ltfu_art)),
-           active_tb_new_not = active_tb_new_not*(1-params$p_new_ltfu[1]/(1-params$p_ltfu_art)),
-           active_tb_est_tpt = active_tb_est_tpt*(1-params$p_est_ltfu/(1-params$p_ltfu_art)),
-           active_tb_est_not = active_tb_est_not*(1-params$p_est_ltfu/(1-params$p_ltfu_art))
-           )
-  d_ltbi[,,"ltbi_ltfu_tpt"] <- d_ltbi[,,"ltbi_ltfu_tpt"] +
-    d_ltbi[,,"ltbi_new_tpt"]*rbind(params$p_new_ltfu, params$p_new_ltfu)/(1-params$p_ltfu_art) +
-    d_ltbi[,,"ltbi_est_tpt"]*params$p_est_ltfu/(1-params$p_ltfu_art)
-  d_ltbi[,,"ltbi_new_tpt"] <- d_ltbi[,,"ltbi_new_tpt"]*(1-rbind(params$p_new_ltfu, params$p_new_ltfu)/(1-params$p_ltfu_art))
-  d_ltbi[,,"ltbi_est_tpt"] <- d_ltbi[,,"ltbi_est_tpt"]*(1-params$p_est_ltfu/(1-params$p_ltfu_art))
-  d_ltbi[,,"ltbi_ltfu_not"] <- d_ltbi[,,"ltbi_ltfu_not"] +
-    d_ltbi[,,"ltbi_new_not"]*rbind(params$p_new_ltfu, params$p_new_ltfu)/(1-params$p_ltfu_art) +
-    d_ltbi[,,"ltbi_est_not"]*params$p_est_ltfu/(1-params$p_ltfu_art)
-  d_ltbi[,,"ltbi_new_not"] <- d_ltbi[,,"ltbi_new_not"]*(1-rbind(params$p_new_ltfu, params$p_new_ltfu)/(1-params$p_ltfu_art))
-  d_ltbi[,,"ltbi_est_not"] <- d_ltbi[,,"ltbi_est_not"]*(1-params$p_est_ltfu/(1-params$p_ltfu_art))
+  #new LTFU - keep track of separately so none return the same timestep
+  no_tb_newltfu_new_tpt <- params$p_new_ltfu[1]*d$no_tb_new_tpt
+  no_tb_newltfu_est_tpt <- params$p_est_ltfu*d$no_tb_est_tpt
+  no_tb_newltfu_new_not <- params$p_new_ltfu[1]*d$no_tb_new_not
+  no_tb_newltfu_est_not <- params$p_est_ltfu*d$no_tb_est_not
+  active_tb_newltfu_new_tpt <- params$p_new_ltfu[1]*d$active_tb_new_tpt
+  active_tb_newltfu_est_tpt <- params$p_est_ltfu*d$active_tb_est_tpt
+  active_tb_newltfu_new_not <- params$p_new_ltfu[1]*d$active_tb_new_not
+  active_tb_newltfu_est_not <- params$p_est_ltfu*d$active_tb_est_not
+  ltbi_newltfu_new_tpt <- d_ltbi[,,"ltbi_new_tpt"]*rbind(params$p_new_ltfu, params$p_new_ltfu)
+  ltbi_newltfu_est_tpt <- d_ltbi[,,"ltbi_est_tpt"]*params$p_est_ltfu
+  ltbi_newltfu_new_not <- d_ltbi[,,"ltbi_new_not"]*rbind(params$p_new_ltfu, params$p_new_ltfu)
+  ltbi_newltfu_est_not <- d_ltbi[,,"ltbi_est_not"]*params$p_est_ltfu
+  #returns from LTFU to est - keep track of separately so no new LTFU return the same timestep
+  no_tb_return_tpt <- params$p_ltfu_art*d$no_tb_ltfu_tpt
+  no_tb_return_not <- params$p_ltfu_art*d$no_tb_ltfu_not
+  active_tb_return_tpt <- params$p_ltfu_art*d$active_tb_ltfu_tpt
+  active_tb_return_not <- params$p_ltfu_art*d$active_tb_ltfu_not
+  ltbi_return_tpt <- params$p_ltfu_art*d_ltbi[,,"ltbi_ltfu_tpt"]
+  ltbi_return_not <- params$p_ltfu_art*d_ltbi[,,"ltbi_ltfu_not"]
   
-  #returns from LTFU
+  #update dataframes and matrices
+  #LTFU
   d <- d %>% 
-    mutate(no_tb_est_tpt = no_tb_est_tpt + params$p_ltfu_art*no_tb_ltfu_tpt,
-           no_tb_est_not = no_tb_est_not + params$p_ltfu_art*no_tb_ltfu_not,
-           active_tb_est_tpt = active_tb_est_tpt + params$p_ltfu_art*active_tb_ltfu_tpt,
-           active_tb_est_not = active_tb_est_not + params$p_ltfu_art*active_tb_ltfu_not,
-           no_tb_ltfu_tpt = no_tb_ltfu_tpt*(1-params$p_ltfu_art),
-           no_tb_ltfu_not = no_tb_ltfu_not*(1-params$p_ltfu_art),
-           active_tb_ltfu_tpt = active_tb_ltfu_tpt*(1-params$p_ltfu_art),
-           active_tb_ltfu_not = active_tb_ltfu_not*(1-params$p_ltfu_art)
+    mutate(no_tb_ltfu_tpt = no_tb_ltfu_tpt + no_tb_newltfu_new_tpt + no_tb_newltfu_est_tpt - no_tb_return_tpt,
+           no_tb_ltfu_not = no_tb_ltfu_not + no_tb_newltfu_new_not + no_tb_newltfu_est_not - no_tb_return_not,
+           active_tb_ltfu_tpt = active_tb_ltfu_tpt + active_tb_newltfu_new_tpt + active_tb_newltfu_est_tpt - active_tb_return_tpt,
+           active_tb_ltfu_not = active_tb_ltfu_not + active_tb_newltfu_new_not + active_tb_newltfu_est_not - active_tb_return_not
            )
-  d_ltbi[,,"ltbi_est_tpt"] <- d_ltbi[,,"ltbi_est_tpt"] + params$p_ltfu_art*d_ltbi[,,"ltbi_ltfu_tpt"]
-  d_ltbi[,,"ltbi_est_not"] <- d_ltbi[,,"ltbi_est_not"] + params$p_ltfu_art*d_ltbi[,,"ltbi_ltfu_not"]
-  d_ltbi[,,"ltbi_ltfu_tpt"] <- d_ltbi[,,"ltbi_ltfu_tpt"]*(1-params$p_ltfu_art)
-  d_ltbi[,,"ltbi_ltfu_not"] <- d_ltbi[,,"ltbi_ltfu_not"]*(1-params$p_ltfu_art)
+  d_ltbi[,,"ltbi_ltfu_tpt"] <- d_ltbi[,,"ltbi_ltfu_tpt"] + ltbi_newltfu_new_tpt + ltbi_newltfu_est_tpt - ltbi_return_tpt
+  d_ltbi[,,"ltbi_ltfu_not"] <- d_ltbi[,,"ltbi_ltfu_not"] + ltbi_newltfu_new_not + ltbi_newltfu_est_not - ltbi_return_not
+  #not LTFU
+  d <- d %>%
+    mutate(no_tb_new_tpt = no_tb_new_tpt - no_tb_newltfu_new_tpt,
+           no_tb_new_not = no_tb_new_not - no_tb_newltfu_new_not,
+           no_tb_est_tpt = no_tb_est_tpt + no_tb_return_tpt - no_tb_newltfu_est_tpt,
+           no_tb_est_not = no_tb_est_not + no_tb_return_not - no_tb_newltfu_est_not,
+           active_tb_new_tpt = active_tb_new_tpt - active_tb_newltfu_new_tpt,
+           active_tb_new_not = active_tb_new_not - active_tb_newltfu_new_not,
+           active_tb_est_tpt = active_tb_est_tpt + active_tb_return_tpt - active_tb_newltfu_est_tpt,
+           active_tb_est_not = active_tb_est_not + active_tb_return_not - active_tb_newltfu_est_not)
+  d_ltbi[,,"ltbi_new_tpt"] <- d_ltbi[,,"ltbi_new_tpt"] - ltbi_newltfu_new_tpt
+  d_ltbi[,,"ltbi_new_not"] <- d_ltbi[,,"ltbi_new_not"] - ltbi_newltfu_new_not
+  d_ltbi[,,"ltbi_est_tpt"] <- d_ltbi[,,"ltbi_est_tpt"] + ltbi_return_tpt - ltbi_newltfu_est_tpt
+  d_ltbi[,,"ltbi_est_not"] <- d_ltbi[,,"ltbi_est_not"] + ltbi_return_not - ltbi_newltfu_est_not
   
   #Step 7: Move all LTBI back by 1 year
   d_ltbi_new <- array(0, dim=dim(d_ltbi)+c(0,1,0))
@@ -1173,7 +1211,7 @@ tpt_covg_plhiv <- function(d, params, option_split) {
                                     initiate_ipt_num/(plhiv_new + backlog - active_tb_new - active_tb_est_not - no_tb_est_not_tb))),
              initiate_ipt_covg_new=initiate_ipt_covg,
              initiate_ipt_covg_est=initiate_ipt_covg
-      )
+      ) %>% select(-ends_with("covg"))
   }
   else {
     print("Error: select a valid option to split coverage across new and established PLHIV")
@@ -1964,10 +2002,10 @@ run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, op
            initiate_3hr_num=0)
   pop_calcs_tpt <- pop_calcs %>% 
     mutate(scenario=scenarios[[1]],
-           initiate_ipt_num=covg[["6h"]]/100,
-           initiate_3hp_num=covg[["3hp"]]/100,
-           initiate_1hp_num=covg[["1hp"]]/100,
-           initiate_3hr_num=covg[["3hr"]]/100)
+           initiate_ipt_num=covg[["6h"]],
+           initiate_3hp_num=covg[["3hp"]],
+           initiate_1hp_num=covg[["1hp"]],
+           initiate_3hr_num=covg[["3hr"]])
   
   #set up time-varying parameters
   #manipulate progression risk to be vector over time (since entering the model). last stratification is 10+
@@ -1994,18 +2032,18 @@ run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, op
            active_tb_new=plhiv_new*params$p_ltbi*params$p_reactivate_new[[1]],
            no_tb_new=plhiv_new*(1-params$p_ltbi),
            ltbi_est_tpt=0,
-           active_tb_est_tpt=0,
-           no_tb_est_tpt=0,
-           ltbi_est_not=backlog*params$p_ltbi*(1-params$p_reactivate_est[[1]]),
+           active_tb_est_tpt=if_else(year==start_yr, 0, as.numeric(NA)),
+           no_tb_est_tpt=if_else(year==start_yr, 0, as.numeric(NA)),
+           ltbi_est_not=if_else(year==start_yr, backlog*params$p_ltbi*(1-params$p_reactivate_est[[1]]), 0),
            active_tb_est_not=backlog*params$p_ltbi*params$p_reactivate_est[[1]],
            no_tb_est_not=backlog*(1-params$p_ltbi),
-           no_tb_est_not_tb=0, #separately track those that haven't gotten TPT and have had TB - not eligible for TPT
+           no_tb_est_not_tb=if_else(year==start_yr, 0, as.numeric(NA)), #separately track those that haven't gotten TPT and have had TB - not eligible for TPT
            ltbi_ltfu_tpt=0,
-           active_tb_ltfu_tpt=0,
-           no_tb_ltfu_tpt=0,
+           active_tb_ltfu_tpt=if_else(year==start_yr, 0, as.numeric(NA)),
+           no_tb_ltfu_tpt=if_else(year==start_yr, 0, as.numeric(NA)),
            ltbi_ltfu_not=0,
-           active_tb_ltfu_not=0,
-           no_tb_ltfu_not=0)
+           active_tb_ltfu_not=if_else(year==start_yr, 0, as.numeric(NA)),
+           no_tb_ltfu_not=if_else(year==start_yr, 0, as.numeric(NA)))
   
   #set up LTBI version that tracks time
   plhiv_ltbi <- cbind("t"=1,
@@ -2017,10 +2055,10 @@ run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, op
   plhiv_ltbi <- plhiv_ltbi %>% mutate(t=ts)
   plhiv_ltbi <- plhiv_ltbi %>% mutate(ltbi_new_tpt=0,
                                       ltbi_new_not=if_else(t==1, ltbi_new, 0),
-                                      ltbi_est_tpt=if_else(t==2, ltbi_est_tpt, 0),
-                                      ltbi_est_not=if_else(t==2, ltbi_est_not, 0),
-                                      ltbi_ltfu_tpt=if_else(t==2, ltbi_ltfu_tpt, 0),
-                                      ltbi_ltfu_not=if_else(t==2, ltbi_ltfu_not, 0))
+                                      ltbi_est_tpt=if_else(t==1, ltbi_est_tpt, 0),
+                                      ltbi_est_not=if_else(t==1, ltbi_est_not, 0),
+                                      ltbi_ltfu_tpt=if_else(t==1, ltbi_ltfu_tpt, 0),
+                                      ltbi_ltfu_not=if_else(t==1, ltbi_ltfu_not, 0))
   plhiv_ltbi <- plhiv_ltbi %>% mutate(p_reactivate_new=p_reactivate_new[t],
                                       p_reactivate_est=p_reactivate_est[t],
                                       p_reactivate_ltfu=p_reactivate_ltfu[t])
@@ -2036,15 +2074,12 @@ run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, op
   plhiv <- plhiv %>% select(-c(ltbi_new, ltbi_est_tpt, ltbi_est_not, ltbi_ltfu_tpt, ltbi_ltfu_not))
   
   #loop over each year and run model
-  plhiv_flag <- c()
   for(i in start_yr:end_yr) { #currently no way to have longer analytical horizon than policy horizon in the app version
     plhiv_t <- plhiv %>% filter(year==i)
     plhiv_ltbi_t <- plhiv_ltbi[c(paste0(i, "c"), paste0(i, "t")),,]
     
     #calculate split of TPT initiation by new vs. previously enrolled
     plhiv_t <- tpt_covg_plhiv(plhiv_t, params, option_split)
-    plhiv_flag <- c(plhiv_flag, max(plhiv_t$flag)) #flag if imputed # to initiate is too high
-    print(plhiv_flag)
     #run model
     out <- model_tb_plhiv(plhiv_t, plhiv_ltbi_t, params)
     plhiv_new <- out$plhiv
@@ -2101,11 +2136,17 @@ run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, op
       plhiv_ltbi[,params$yrs_new+1, "ltbi_new_tpt"] <- 0
       plhiv_ltbi[,params$yrs_new+1, "ltbi_new_not"] <- 0
       
-      plhiv <- plhiv %>% group_by(scenario, code) %>%
-        mutate(backlog=if_else(year==i+1, no_tb_est_not + no_tb_est_not_tb + active_tb_est_not +
-                                 as.vector(rowSums(plhiv_ltbi[c(paste0(i+1, "c"), paste0(i+1, "t")),,"ltbi_est_not"])),
-                               backlog))
-      #new PLHIV don't get enrolled year after they enroll
+      plhiv <- plhiv %>% 
+        mutate(backlog=if_else(year==i+1 & scenario==scenarios[[2]], 
+                               no_tb_est_not + no_tb_est_not_tb + active_tb_est_not +
+                                 sum(plhiv_ltbi[paste0(i+1, "c"),,"ltbi_est_not"], na.rm=T)+
+                                 sum(plhiv_ltbi[paste0(i+1, "c"), 2:params$yrs, "ltbi_new_not"]),
+                               if_else(year==i+1 & scenario==scenarios[[1]],
+                                       no_tb_est_not + no_tb_est_not_tb + active_tb_est_not +
+                                         sum(plhiv_ltbi[paste0(i+1, "t"),,"ltbi_est_not"], na.rm=T)+
+                                         sum(plhiv_ltbi[paste0(i+1, "t"), 2:params$yrs, "ltbi_new_not"]),
+                                       backlog)))
+                                             
     }
     
     #calculate cumulative cases and deaths
@@ -2135,7 +2176,7 @@ run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, op
     mutate(no_tb_est_not=no_tb_est_not + no_tb_est_not_tb,
            no_tb_new_not=no_tb_new_not + no_tb_new_not_tb) %>%
     select(-c(no_tb_est_not_tb, no_tb_new_not_tb)) #remove this so consistent naming across variables - no longer need to track it
-  plhiv <- plhiv %>% select(-c(active_tb_new, no_tb_new, initiate_3hp_covg, initiate_1hp_covg, initiate_3hr_covg, initiate_ipt_covg))
+  plhiv <- plhiv %>% select(-c(active_tb_new, no_tb_new))
   plhiv_comb <- pivot_longer(plhiv, cols=c(ends_with("_tpt"), ends_with("_not")),
                              names_to=c(".value", "tpt_status"), 
                              names_sep="_(?=[^_]+$)") #this is regex for "last underscore only"
@@ -2169,8 +2210,8 @@ run_model_plhiv <- function(country_name, covg, scenarios, params, pop_calcs, op
   #cost-effectiveness code would go here
   
   plhiv_comb <- plhiv_comb %>% select(-c(backlog, cum_disc_costs))
-  out <- list("plhiv"=plhiv_comb,
-              "plhiv_flag"=max(plhiv_flag)
+  out <- list("plhiv"=plhiv_comb %>% select(-flag),
+              "plhiv_flag"=max(plhiv_comb$flag)
               )
   print(out$plhiv_flag)
   return(out)
@@ -4396,7 +4437,7 @@ server <- function(input, output, session) {
                         input$num_plhiv_2030*input$split_plhiv_3hp_2030, 
                         input$num_plhiv_2031*input$split_plhiv_3hp_2031, 
                         input$num_plhiv_2032*input$split_plhiv_3hp_2032, 
-                        input$num_plhiv_2033*input$split_plhiv_3hp_2033)
+                        input$num_plhiv_2033*input$split_plhiv_3hp_2033)/100
     num_plhiv_1hp <- c(input$num_plhiv_2024*input$split_plhiv_1hp_2024, 
                         input$num_plhiv_2025*input$split_plhiv_1hp_2025, 
                         input$num_plhiv_2026*input$split_plhiv_1hp_2026, 
@@ -4406,7 +4447,7 @@ server <- function(input, output, session) {
                         input$num_plhiv_2030*input$split_plhiv_1hp_2030, 
                         input$num_plhiv_2031*input$split_plhiv_1hp_2031, 
                         input$num_plhiv_2032*input$split_plhiv_1hp_2032, 
-                        input$num_plhiv_2033*input$split_plhiv_1hp_2033)
+                        input$num_plhiv_2033*input$split_plhiv_1hp_2033)/100
     num_plhiv_3hr <- c(input$num_plhiv_2024*input$split_plhiv_3hr_2024, 
                         input$num_plhiv_2025*input$split_plhiv_3hr_2025, 
                         input$num_plhiv_2026*input$split_plhiv_3hr_2026, 
@@ -4416,7 +4457,7 @@ server <- function(input, output, session) {
                         input$num_plhiv_2030*input$split_plhiv_3hr_2030, 
                         input$num_plhiv_2031*input$split_plhiv_3hr_2031, 
                         input$num_plhiv_2032*input$split_plhiv_3hr_2032, 
-                        input$num_plhiv_2033*input$split_plhiv_3hr_2033)
+                        input$num_plhiv_2033*input$split_plhiv_3hr_2033)/100
     num_plhiv_6h <- c(input$num_plhiv_2024*input$split_plhiv_6h_2024, 
                         input$num_plhiv_2025*input$split_plhiv_6h_2025, 
                         input$num_plhiv_2026*input$split_plhiv_6h_2026, 
@@ -4426,7 +4467,7 @@ server <- function(input, output, session) {
                         input$num_plhiv_2030*input$split_plhiv_6h_2030, 
                         input$num_plhiv_2031*input$split_plhiv_6h_2031, 
                         input$num_plhiv_2032*input$split_plhiv_6h_2032, 
-                        input$num_plhiv_2033*input$split_plhiv_6h_2033)
+                        input$num_plhiv_2033*input$split_plhiv_6h_2033)/100
     num_plhiv <- list("3hp"=num_plhiv_3hp,
                        "1hp"=num_plhiv_1hp,
                        "3hr"=num_plhiv_3hr,
