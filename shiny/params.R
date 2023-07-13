@@ -62,7 +62,7 @@ p_plhiv_initiate <- p_hh_child_initiate #doesn't matter for CEA, but just have s
 #TPT completion
 complete_diff_1hp <- 0.1 #assume 10 % pts higher completion on 1HP than 3HP
 complete_diff_ipt <- -0.05 #assume 5 % pts lower completion on IPT than 3HP
-complete_diff_3hr <- 0 #for now
+complete_diff_3hr <- -0.15 #based on https://bmjopen.bmj.com/content/12/9/e057717 
 p_child_complete_3hp <- 0.85 #probability of completing 3HP, conditional on initiating
 p_child_complete_ipt <- p_child_complete_3hp + complete_diff_ipt
 p_child_complete_1hp <- p_child_complete_3hp + complete_diff_1hp
@@ -213,6 +213,8 @@ dur_plhiv_ipt <- 6*30 #6 months IPT
 c_ipt100 <- 0.02 
 c_ipt300 <- 0.04
 c_rif300 <- 19.33/100
+c_h75_r50_ped <- 4.41/84
+c_h75_r150 <- 31.78/672
 c_child_ipt <- c_ipt100*dur_child_ipt
 c_adol_ipt <- mean(c(c_ipt300, c_ipt100))*dur_adol_ipt
 c_adult_ipt <- c_ipt300*dur_adult_ipt
@@ -225,8 +227,8 @@ c_child_1hp <- 22
 c_adol_1hp <- c_child_1hp
 c_adult_1hp <- c_child_1hp
 c_plhiv_1hp <- c_child_1hp
-c_child_3hr <- (90*c_ipt300 + 90*2*c_rif300)/2
-c_adol_3hr <- 90*c_ipt300 + 90*2*c_rif300
+c_child_3hr <- 90*3*c_h75_r50_ped
+c_adol_3hr <- 90*2*c_h75_r150
 c_adult_3hr <- c_adol_3hr
 c_plhiv_3hr <- c_adult_3hr
 
