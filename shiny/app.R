@@ -3103,7 +3103,7 @@ ui <- navbarPage(
         label="Notified TB patients, 2033",
         value=pop_calcs %>% filter(country==countries[[1]] & year==2033) %>% pull(tb_notif_new)))
     ),
-    h4("TPT Acceptance & Refusal"),
+    h4("TPT Acceptance & Completion"),
     fluidRow(column(3, numericInput(
       inputId="initiate_plhiv",
       label="TPT Acceptance, PLHIV (%)",
@@ -3120,6 +3120,74 @@ ui <- navbarPage(
         inputId="initiate_adult",
         label="TPT Acceptance, Contacts 15+ (%)",
         value=73.5))
+    ),
+    fluidRow(column(3, numericInput(
+      inputId="complete_plhiv_3hp",
+      label="3HP Completion, PLHIV (%)",
+      value=85)),
+      column(3, numericInput(
+        inputId="complete_child_3hp",
+        label="3HP Completion, Contacts < 5 (%)",
+        value=85)),
+      column(3, numericInput(
+        inputId="complete_adol_3hp",
+        label="3HP Completion, Contacts 5-14 (%)",
+        value=85)),
+      column(3, numericInput(
+        inputId="complete_adult_3hp",
+        label="3HP Completion, Contacts 15+ (%)",
+        value=85))
+    ),
+    fluidRow(column(3, numericInput(
+      inputId="complete_plhiv_1hp",
+      label="1HP Completion, PLHIV (%)",
+      value=95)),
+      column(3, numericInput(
+        inputId="complete_child_1hp",
+        label="1HP Completion, Contacts < 5 (%)",
+        value=95)),
+      column(3, numericInput(
+        inputId="complete_adol_1hp",
+        label="1HP Completion, Contacts 5-14 (%)",
+        value=95)),
+      column(3, numericInput(
+        inputId="complete_adult_1hp",
+        label="1HP Completion, Contacts 15+ (%)",
+        value=95))
+    ),
+    fluidRow(column(3, numericInput(
+      inputId="complete_plhiv_3hr",
+      label="3HR Completion, PLHIV (%)",
+      value=70)),
+      column(3, numericInput(
+        inputId="complete_child_3hr",
+        label="3HR Completion, Contacts < 5 (%)",
+        value=70)),
+      column(3, numericInput(
+        inputId="complete_adol_3hr",
+        label="3HR Completion, Contacts 5-14 (%)",
+        value=70)),
+      column(3, numericInput(
+        inputId="complete_adult_3hr",
+        label="3HR Completion, Contacts 15+ (%)",
+        value=70))
+    ),
+    fluidRow(column(3, numericInput(
+      inputId="complete_plhiv_ipt",
+      label="IPT Completion, PLHIV (%)",
+      value=80)),
+      column(3, numericInput(
+        inputId="complete_child_ipt",
+        label="IPT Completion, Contacts < 5 (%)",
+        value=80)),
+      column(3, numericInput(
+        inputId="complete_adol_ipt",
+        label="IPT Completion, Contacts 5-14 (%)",
+        value=80)),
+      column(3, numericInput(
+        inputId="complete_adult_ipt",
+        label="IPT Completion, Contacts 15+ (%)",
+        value=80))
     ),
     h4("TPT Drug Costs (all in USD per full course)"),
     fluidRow(
@@ -3160,19 +3228,19 @@ ui <- navbarPage(
       column(3, numericInput(
         inputId="c_3hr_plhiv",
         label="3HR cost per PLHIV",
-        value=38)),
+        value=8.5)),
       column(3, numericInput(
         inputId="c_3hr_child",
         label="3HR cost per contact < 5",
-        value=19)),
+        value=14.2)),
       column(3, numericInput(
         inputId="c_3hr_adol",
         label="3HR cost per contact 5-14",
-        value=38)),
+        value=8.5)),
       column(3, numericInput(
         inputId="c_3hr_adult",
         label="3HR cost per contact 15+",
-        value=38))),
+        value=8.5))),
     fluidRow(
       column(3, numericInput(
         inputId="c_6h_plhiv",
@@ -3314,6 +3382,22 @@ server <- function(input, output, session) {
   iv$add_rule("initiate_child", sv_between(0.1, 100))
   iv$add_rule("initiate_adol", sv_between(0.1, 100))
   iv$add_rule("initiate_adult", sv_between(0.1, 100))
+  iv$add_rule("complete_plhiv_3hp", sv_between(0.1, 100))
+  iv$add_rule("complete_child_3hp", sv_between(0.1, 100))
+  iv$add_rule("complete_adol_3hp", sv_between(0.1, 100))
+  iv$add_rule("complete_adult_3hp", sv_between(0.1, 100))
+  iv$add_rule("complete_plhiv_1hp", sv_between(0.1, 100))
+  iv$add_rule("complete_child_1hp", sv_between(0.1, 100))
+  iv$add_rule("complete_adol_1hp", sv_between(0.1, 100))
+  iv$add_rule("complete_adult_1hp", sv_between(0.1, 100))
+  iv$add_rule("complete_plhiv_3hr", sv_between(0.1, 100))
+  iv$add_rule("complete_child_3hr", sv_between(0.1, 100))
+  iv$add_rule("complete_adol_3hr", sv_between(0.1, 100))
+  iv$add_rule("complete_adult_3hr", sv_between(0.1, 100))
+  iv$add_rule("complete_plhiv_ipt", sv_between(0.1, 100))
+  iv$add_rule("complete_child_ipt", sv_between(0.1, 100))
+  iv$add_rule("complete_adol_ipt", sv_between(0.1, 100))
+  iv$add_rule("complete_adult_ipt", sv_between(0.1, 100))
   output$split_plhiv_2024 <- renderText({
     out <- ifelse(input$split_plhiv_3hp_2024 + input$split_plhiv_1hp_2024 + 
                     input$split_plhiv_3hr_2024 + input$split_plhiv_6h_2024!=100,
@@ -3663,6 +3747,22 @@ server <- function(input, output, session) {
     child_params$p_initiate <- input$initiate_child/100
     adol_params$p_initiate <- input$initiate_adol/100
     adult_params$p_initiate <- input$initiate_adult/100
+    plhiv_params$p_complete_3hp <- input$complete_plhiv_3hp/100
+    child_params$p_complete_3hp <- input$complete_child_3hp/100
+    adol_params$p_complete_3hp <- input$complete_adol_3hp/100
+    adult_params$p_complete_3hp <- input$complete_adult_3hp/100
+    plhiv_params$p_complete_1hp <- input$complete_plhiv_1hp/100
+    child_params$p_complete_1hp <- input$complete_child_1hp/100
+    adol_params$p_complete_1hp <- input$complete_adol_1hp/100
+    adult_params$p_complete_1hp <- input$complete_adult_1hp/100
+    plhiv_params$p_complete_3hr <- input$complete_plhiv_3hr/100
+    child_params$p_complete_3hr <- input$complete_child_3hr/100
+    adol_params$p_complete_3hr <- input$complete_adol_3hr/100
+    adult_params$p_complete_3hr <- input$complete_adult_3hr/100
+    plhiv_params$p_complete_ipt <- input$complete_plhiv_ipt/100
+    child_params$p_complete_ipt <- input$complete_child_ipt/100
+    adol_params$p_complete_ipt <- input$complete_adol_ipt/100
+    adult_params$p_complete_ipt <- input$complete_adult_ipt/100
     #update population sizes
     pop_calcs <- pop_calcs %>% filter(code==country_code & year %in% 2024:2033) %>% 
       mutate(backlog_none=if_else(year==2024, as.double(input$backlog_plhiv_2024), backlog_none),
@@ -4107,7 +4207,8 @@ server <- function(input, output, session) {
   output$plhiv_initiate <- renderPlotly({
     plot_ly(rv()$plhiv_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -4), 
+            y=~initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, 
+            texttemplate='%{value:.1f}',
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
@@ -4125,7 +4226,8 @@ server <- function(input, output, session) {
   output$child_initiate <- renderPlotly({
     plot_ly(rv()$child_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -2), 
+            y=~initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, 
+            texttemplate='%{value:.1f}',
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
@@ -4143,7 +4245,8 @@ server <- function(input, output, session) {
   output$adol_initiate <- renderPlotly({
     plot_ly(rv()$adol_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -2), 
+            y=~initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, 
+            texttemplate='%{value:.1f}',
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
@@ -4161,7 +4264,8 @@ server <- function(input, output, session) {
   output$adult_initiate <- renderPlotly({
     plot_ly(rv()$adult_output,
             x=~year,
-            y=~round(initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, -2), 
+            y=~initiate_ipt+initiate_3hp+initiate_1hp+initiate_3hr, 
+            texttemplate='%{value:.1f}',
             type='bar',
             color=~scenario,
             colors=c("#04a3bd","#f0be3d")) %>%
