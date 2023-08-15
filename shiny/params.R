@@ -227,9 +227,9 @@ c_child_1hp <- 22
 c_adol_1hp <- c_child_1hp
 c_adult_1hp <- c_child_1hp
 c_plhiv_1hp <- c_child_1hp
-c_child_3hr <- 90*3*c_h75_r50_ped
-c_adol_3hr <- 90*2*c_h75_r150
-c_adult_3hr <- c_adol_3hr
+c_child_3hr <- 14.40 #manually updated from Maka; 90*3*c_h75_r50_ped
+c_adol_3hr <- (25.20 + 9)/2 #manually updated from Maka assuming 50% split ped vs. adult formulation; 90*2*c_h75_r150
+c_adult_3hr <- 9 #manually updated from Maka; c_adol_3hr
 c_plhiv_3hr <- c_adult_3hr
 
 #treatment visits

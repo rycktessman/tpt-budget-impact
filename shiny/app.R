@@ -3228,19 +3228,19 @@ ui <- navbarPage(
       column(3, numericInput(
         inputId="c_3hr_plhiv",
         label="3HR cost per PLHIV",
-        value=8.5)),
+        value=9)),
       column(3, numericInput(
         inputId="c_3hr_child",
         label="3HR cost per contact < 5",
-        value=14.2)),
+        value=14.4)),
       column(3, numericInput(
         inputId="c_3hr_adol",
         label="3HR cost per contact 5-14",
-        value=8.5)),
+        value=17.1)),
       column(3, numericInput(
         inputId="c_3hr_adult",
         label="3HR cost per contact 15+",
-        value=8.5))),
+        value=9))),
     fluidRow(
       column(3, numericInput(
         inputId="c_6h_plhiv",
